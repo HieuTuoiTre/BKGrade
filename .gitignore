@@ -1,0 +1,25 @@
+# Maven build directory (RẤT QUAN TRỌNG: Không push thư mục build lên Git)
+target/
+*.war
+*.ear
+*.class
+
+# Ngoại lệ: Giữ lại file jar của Maven Wrapper
+!/.mvn/wrapper/maven-wrapper.jar
+
+# Cấu hình IDE cá nhân (tránh xung đột khi bạn nhóm dùng máy khác hoặc IDE khác)
+.vscode/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# Hệ điều hành Windows / Mac
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# File tạm và log
+*.log
+*.tmp
