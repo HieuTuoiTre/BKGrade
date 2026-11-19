@@ -15,15 +15,16 @@ src/
 │   │   ├── config/
 │   │   │   └── CustomConnectionPool.java   <- [TRỌNG TÂM] Tự viết Connection Pool
 │   │   ├── model/
-│   │   │   ├── Course.java                 <- Entity môn học
-│   │   │   ├── Grade.java                  <- Entity bảng điểm chi tiết
-│   │   │   └── SemesterSummary.java        <- Đối tượng tổng kết GPA/CPA học kỳ
-│   │   ├── dao/
-│   │   │   ├── CourseDAO.java              <- Tương tác DB bảng courses
-│   │   │   └── GradeDAO.java               <- Tương tác DB bảng grades
-│   │   ├── service/
-│   │   │   ├── DutParserService.java       <- [TÍNH NĂNG ĐỈNH] Bóc tách text copy từ DUT
-│   │   │   └── GradeCalculatorService.java <- Thuật toán tính GPA hệ 10, hệ 4, xếp loại
+│   │   │   ├── Bean/
+│   │   │   │   ├── Course.java             <- Entity môn học (JavaBean)
+│   │   │   │   ├── Grade.java              <- Entity bảng điểm chi tiết (JavaBean)
+│   │   │   │   └── SemesterSummary.java    <- Đối tượng tổng kết GPA/CPA (DTO/Bean)
+│   │   │   ├── Bo/
+│   │   │   │   ├── DutParserBO.java        <- [TÍNH NĂNG ĐỈNH] Bóc tách text copy từ DUT
+│   │   │   │   └── GradeCalculatorBO.java  <- Thuật toán tính GPA hệ 10, hệ 4, xếp loại
+│   │   │   └── Dao/
+│   │   │       ├── CourseDAO.java          <- Tương tác DB bảng courses
+│   │   │       └── GradeDAO.java           <- Tương tác DB bảng grades
 │   │   └── controller/
 │   │       └── GradeController.java        <- Servlet xử lý /grades, /import-grades
 │   └── webapp/
@@ -68,16 +69,19 @@ Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
    * `score_4`: Điểm hệ 4 (`DOUBLE`).
    * `grade_letter`: Điểm chữ (`VARCHAR(5)`, ví dụ: `A`, `B+`, `C`...).
 
-#### Bước 3: Tầng Model
+#### Bước 3: Tầng Model - Bean (`Course.java`, `Grade.java`, `SemesterSummary.java`)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bean/`
 * Tạo 3 lớp: `Course.java`, `Grade.java`, và `SemesterSummary.java` (chứa các thuộc tính: `totalCredits`, `gpa10`, `gpa4`, `academicRank`).
-* Đầy đủ hàm khởi tạo và Getter/Setter.
+* Đầy đủ thuộc tính `private`, hàm khởi tạo (constructor rỗng và đầy đủ tham số), và các hàm Getter/Setter chuẩn JavaBean.
 
 #### Bước 4: Tầng DAO (`CourseDAO.java`, `GradeDAO.java`)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Dao/`
 * Các hàm DAO sẽ mượn kết nối từ `CustomConnectionPool.getInstance().getConnection()` và trả lại trong khối `finally { CustomConnectionPool.getInstance().releaseConnection(conn); }`.
 * Viết hàm `saveGradeList(int userId, List<Grade> list)` để lưu một danh sách điểm vừa bóc tách vào DB.
 * Viết hàm `getGradesByUserId(int userId)` để lấy toàn bộ điểm của sinh viên đang đăng nhập.
 
-#### Bước 5: Tầng Service 1: `DutParserService.java` (Bộ não bóc tách dữ liệu DUT)
+#### Bước 5: Tầng BO 1: `DutParserBO.java` (Bộ não bóc tách dữ liệu DUT)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/`
 * Nhận chuỗi thô người dùng paste vào từ giao diện.
 * **Quy trình thuật toán:**
   1. Tách chuỗi thành các dòng: `String[] lines = rawText.split("\\r?\\n");`.
@@ -94,7 +98,8 @@ Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
      * Lấy giá trị ngay trước nữa làm Điểm hệ 10 (`score_10`).
   5. Đóng gói vào đối tượng `Grade` và trả về danh sách `List<Grade>`.
 
-#### Bước 6: Tầng Service 2: `GradeCalculatorService.java` (Thuật toán tính GPA chuẩn đại học)
+#### Bước 6: Tầng BO 2: `GradeCalculatorBO.java` (Thuật toán tính GPA chuẩn đại học)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/`
 * Tính toán GPA học kỳ và CPA tích lũy:
   $$\text{GPA} = \frac{\sum (\text{Điểm hệ 4} \times \text{Số tín chỉ})}{\sum \text{Số tín chỉ}}$$
 * **Xử lý môn 0 tín chỉ:** Môn có `credits == 0` (như Giáo dục thể chất, môn thực hành gộp) **không được cộng vào mẫu số tổng số tín chỉ tích lũy**.
@@ -108,7 +113,7 @@ Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
 #### Bước 7: Tầng Controller & View (`GradeController.java` & `index.jsp`)
 * **`GradeController.java`** (`@WebServlet("/grades")`):
   * `doGet()`: Lấy dữ liệu điểm hiện có của sinh viên từ DB và chuyển tiếp sang JSP.
-  * `doPost()`: Nhận chuỗi text từ form -> gọi `DutParserService` -> gọi `GradeCalculatorService` -> lưu vào DB qua `GradeDAO` -> trả kết quả ra bảng điểm.
+  * `doPost()`: Nhận chuỗi text từ form -> gọi `DutParserBO` -> gọi `GradeCalculatorBO` -> lưu vào DB qua `GradeDAO` -> trả kết quả ra bảng điểm.
 * **`index.jsp`:**
   * Thiết kế khung `<textarea>` lớn có hướng dẫn: *"Copy bảng điểm từ trang sv.dut.udn.vn và dán vào đây"*.
   * Bảng điểm dạng Table Bootstrap hiển thị: Mã môn, Tên môn, Số TC, Công thức, Điểm 10, Điểm 4, Điểm chữ (có màu sắc bắt mắt: A màu xanh lá, F màu đỏ).

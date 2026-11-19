@@ -13,21 +13,24 @@ src/
 ├── main/
 │   ├── java/com/gradecalc/
 │   │   ├── model/
-│   │   │   └── User.java                 <- Entity người dùng
-│   │   ├── dao/
-│   │   │   └── UserDAO.java              <- Tương tác DB bảng users
+│   │   │   ├── Bean/
+│   │   │   │   └── User.java                 <- Entity người dùng (JavaBean)
+│   │   │   ├── Bo/
+│   │   │   │   └── UserBO.java               <- Nghiệp vụ đăng nhập, đăng ký, băm BCrypt
+│   │   │   └── Dao/
+│   │   │       └── UserDAO.java              <- Tương tác DB bảng users
 │   │   ├── controller/
-│   │   │   └── AuthController.java       <- Servlet xử lý /login, /register, /logout
+│   │   │   └── AuthController.java           <- Servlet xử lý /login, /register, /logout
 │   │   └── filter/
-│   │       ├── AuthFilter.java           <- [TRỌNG TÂM] Chặn truy cập trái phép
-│   │       └── EncodingFilter.java       <- [TRỌNG TÂM] Chuẩn hóa font UTF-8
+│   │       ├── AuthFilter.java               <- [TRỌNG TÂM] Chặn truy cập trái phép
+│   │       └── EncodingFilter.java           <- [TRỌNG TÂM] Chuẩn hóa font UTF-8
 │   └── webapp/
 │       └── WEB-INF/
 │           └── views/
 │               └── auth/
-│                   ├── login.jsp         <- Giao diện form đăng nhập
-│                   ├── register.jsp      <- Giao diện form đăng ký
-│                   └── profile.jsp       <- Trang xem thông tin cá nhân
+│                   ├── login.jsp             <- Giao diện form đăng nhập
+│                   ├── register.jsp          <- Giao diện form đăng ký
+│                   └── profile.jsp           <- Trang xem thông tin cá nhân
 ```
 
 ---
@@ -45,30 +48,41 @@ Tạo bảng `users` trong MySQL (thêm vào file `database/schema.sql`):
   * `role`: Vai trò (`VARCHAR(20) DEFAULT 'STUDENT'`).
   * `created_at`: Thời gian tạo tài khoản.
 
-#### Bước 2: Tầng Model (`User.java`)
-* Tạo các thuộc tính tương ứng với bảng `users`.
+#### Bước 2: Tầng Model - Bean (`User.java`)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bean/User.java`
+* Tạo các thuộc tính tương ứng với bảng `users`: `id`, `username`, `password`, `fullName`, `studentCode`, `role`, `createdAt`.
 * Viết đầy đủ Constructor không tham số, Constructor đầy đủ tham số, và các hàm `getter/setter`.
 * Lưu ý: Không lưu mật khẩu thô trong Model khi đã xác thực xong.
 
 #### Bước 3: Tầng DAO (`UserDAO.java`) — Tiêu chuẩn chống SQL Injection
-* **Hàm `register(User user, String rawPassword)`:**
-  * Kiểm tra username đã tồn tại chưa.
-  * Dùng thư viện `org.mindrot.jbcrypt.BCrypt`:
-    ```java
-    String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
-    ```
-  * Viết câu lệnh SQL `INSERT INTO users ...` sử dụng **100% `PreparedStatement`** (dùng dấu `?`, tuyệt đối không cộng chuỗi để chống SQL Injection).
-* **Hàm `login(String username, String rawPassword)`:**
-  * Tìm `User` theo `username` bằng `PreparedStatement`.
-  * So khớp mật khẩu:
-    ```java
-    if (user != null && BCrypt.checkpw(rawPassword, user.getPassword())) {
-        return user; // Đăng nhập thành công
-    }
-    return null; // Sai mật khẩu
-    ```
+* **Vị trí:** `src/main/java/com/gradecalc/model/Dao/UserDAO.java`
+* Viết các phương thức tương tác CSDL bằng **100% `PreparedStatement`** (mượn connection từ `CustomConnectionPool`):
+  * `save(User user)`: Thêm tài khoản mới vào database.
+  * `findByUsername(String username)`: Tìm kiếm user theo tên đăng nhập.
+  * `checkUsernameExists(String username)`: Kiểm tra trùng lặp username.
 
-#### Bước 4: Tầng Controller (`AuthController.java`)
+#### Bước 4: Tầng BO (`UserBO.java`) — Xử lý nghiệp vụ & Bảo mật BCrypt
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/UserBO.java`
+* Tách biệt nghiệp vụ khỏi Controller và DAO:
+  * **Hàm `register(User user, String rawPassword)`:**
+    * Kiểm tra username đã tồn tại chưa (gọi `UserDAO.checkUsernameExists()`).
+    * Băm mật khẩu bằng thư viện `BCrypt`:
+      ```java
+      String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt(12));
+      user.setPassword(hashedPassword);
+      ```
+    * Gọi `UserDAO.save(user)`.
+  * **Hàm `login(String username, String rawPassword)`:**
+    * Gọi `UserDAO.findByUsername(username)`.
+    * So khớp mật khẩu:
+      ```java
+      if (user != null && BCrypt.checkpw(rawPassword, user.getPassword())) {
+          return user; // Đăng nhập thành công
+      }
+      return null; // Sai mật khẩu hoặc không tồn tại
+      ```
+
+#### Bước 5: Tầng Controller (`AuthController.java`)
 * Khai báo Servlet ánh xạ tới các URL: `@WebServlet(urlPatterns = {"/login", "/register", "/logout", "/profile"})`.
 * **Phương thức `doGet()`:**
   * Nếu vào `/login`: `request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);`.
@@ -76,11 +90,11 @@ Tạo bảng `users` trong MySQL (thêm vào file `database/schema.sql`):
   * Nếu vào `/logout`: Hủy session (`session.invalidate()`) và redirect về trang `/login`.
 * **Phương thức `doPost()`:**
   * Nhận `username`, `password` từ form.
-  * Gọi `UserDAO.login()`:
+  * Gọi `UserBO.login()`:
     * Nếu thành công: Tạo phiên `HttpSession session = request.getSession();` và lưu `session.setAttribute("currentUser", user);`, sau đó redirect tới `/grades`.
     * Nếu thất bại: `request.setAttribute("errorMessage", "Sai tên đăng nhập hoặc mật khẩu!");` và forward lại trang đăng nhập.
 
-#### Bước 5: Tầng View JSP (`login.jsp`, `register.jsp`)
+#### Bước 6: Tầng View JSP (`login.jsp`, `register.jsp`)
 * Sử dụng thư viện JSTL: `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>`.
 * Dùng Bootstrap 5 để thiết kế giao diện form căn giữa màn hình, hiện đại và thân thiện trên điện thoại.
 * Hiển thị thông báo lỗi đẹp mắt nếu có:
