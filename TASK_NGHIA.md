@@ -94,9 +94,19 @@ Tạo bảng `users` trong MySQL (thêm vào file `database/schema.sql`):
     * Nếu thành công: Tạo phiên `HttpSession session = request.getSession();` và lưu `session.setAttribute("currentUser", user);`, sau đó redirect tới `/grades`.
     * Nếu thất bại: `request.setAttribute("errorMessage", "Sai tên đăng nhập hoặc mật khẩu!");` và forward lại trang đăng nhập.
 
-#### Bước 6: Tầng View JSP (`login.jsp`, `register.jsp`)
+#### Bước 6: Tầng View JSP (`login.jsp`, `register.jsp`, `profile.jsp`)
 * Sử dụng thư viện JSTL: `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>`.
 * Dùng Bootstrap 5 để thiết kế giao diện form căn giữa màn hình, hiện đại và thân thiện trên điện thoại.
+* **Tái sử dụng Layout dùng chung do Hiếu xây dựng (`views/layout/`):**
+  * Nhúng thanh điều hướng vào đầu trang:
+    ```jsp
+    <jsp:include page="/WEB-INF/views/layout/navbar.jsp" />
+    ```
+  * Nhúng chân trang vào cuối trang:
+    ```jsp
+    <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+    ```
+  *(Giúp giao diện Đăng nhập, Đăng ký đồng bộ hoàn toàn với Trang chủ và Dashboard)*.
 * Hiển thị thông báo lỗi đẹp mắt nếu có:
   ```jsp
   <c:if test="${not empty errorMessage}">

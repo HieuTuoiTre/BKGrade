@@ -28,10 +28,18 @@ src/
 │   │   └── controller/
 │   │       └── GradeController.java        <- Servlet xử lý /grades, /import-grades
 │   └── webapp/
+│       ├── assets/
+│       │   ├── css/style.css               <- Tùy biến style giao diện
+│       │   ├── images/                     <- Ảnh minh họa, logo DUT
+│       │   └── videos/                     <- Video hướng dẫn copy bảng điểm
+│       ├── index.jsp                       <- [MỚI] Trang chủ / Landing Page công khai
 │       └── WEB-INF/
 │           └── views/
+│               ├── layout/
+│               │   ├── navbar.jsp          <- [MỚI] Thanh điều hướng dùng chung
+│               │   └── footer.jsp          <- [MỚI] Chân trang dùng chung
 │               └── grades/
-│                   └── index.jsp           <- Giao diện Dashboard dán bảng điểm & xem kết quả
+│                   └── dashboard.jsp       <- Giao diện Dashboard dán bảng điểm & xem kết quả
 ```
 
 ---
@@ -110,14 +118,22 @@ Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
   * Trung bình: $2.0 \le \text{GPA} < 2.5$
   * Yếu / Cảnh báo: $\text{GPA} < 2.0$
 
-#### Bước 7: Tầng Controller & View (`GradeController.java` & `index.jsp`)
-* **`GradeController.java`** (`@WebServlet("/grades")`):
-  * `doGet()`: Lấy dữ liệu điểm hiện có của sinh viên từ DB và chuyển tiếp sang JSP.
-  * `doPost()`: Nhận chuỗi text từ form -> gọi `DutParserBO` -> gọi `GradeCalculatorBO` -> lưu vào DB qua `GradeDAO` -> trả kết quả ra bảng điểm.
-* **`index.jsp`:**
+#### Bước 7: Tầng View & Controller (`index.jsp`, `dashboard.jsp`, `GradeController.java`)
+* **1. Trang chủ công khai (`index.jsp` tại thư mục gốc `webapp/`):**
+  * Thiết kế Landing Page chào mừng với Bootstrap 5.
+  * Giới thiệu dự án, thông tin nhóm sinh viên thực hiện (Hiếu & Nghĩa - Khoa CNTT, ĐH Bách Khoa ĐN).
+  * Khối Video ở giữa màn hình hướng dẫn thao tác copy bảng điểm từ trang `sv.dut.udn.vn` rồi dán vào hệ thống.
+  * Nút kêu gọi hành động (Call to action): "Đăng nhập ngay", "Trải nghiệm ngay" dẫn tới `/login`.
+* **2. Các thành phần giao diện dùng chung (`views/layout/`):**
+  * `navbar.jsp`: Thanh điều hướng có logo, menu và các nút Đăng nhập/Đăng xuất.
+  * `footer.jsp`: Chân trang thông tin bản quyền và trường ĐH Bách Khoa.
+* **3. Trang Dashboard tính điểm (`views/grades/dashboard.jsp`):**
   * Thiết kế khung `<textarea>` lớn có hướng dẫn: *"Copy bảng điểm từ trang sv.dut.udn.vn và dán vào đây"*.
   * Bảng điểm dạng Table Bootstrap hiển thị: Mã môn, Tên môn, Số TC, Công thức, Điểm 10, Điểm 4, Điểm chữ (có màu sắc bắt mắt: A màu xanh lá, F màu đỏ).
   * 3 thẻ tóm tắt (Cards) ở trên đầu: **Tổng tín chỉ tích lũy**, **Điểm trung bình (GPA/CPA)**, **Xếp loại học lực**.
+* **4. `GradeController.java` (`@WebServlet("/grades")`):**
+  * `doGet()`: Lấy dữ liệu điểm hiện có của sinh viên từ DB và chuyển tiếp sang `/WEB-INF/views/grades/dashboard.jsp`.
+  * `doPost()`: Nhận chuỗi text từ form -> gọi `DutParserBO` -> gọi `GradeCalculatorBO` -> lưu vào DB qua `GradeDAO` -> trả kết quả ra `dashboard.jsp`.
 
 ---
 
