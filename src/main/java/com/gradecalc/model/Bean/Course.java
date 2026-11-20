@@ -26,17 +26,17 @@ public class Course {
     public void setId(int id) {
         this.id = id;
     }
-    public String getCourse_code() {
+    public String getCourseCode() {
         return courseCode;
     }
-    public void setCourse_code(String course_code) {
-        this.courseCode = course_code;
+    public void setCourseCode(String courseCode) {
+        this.courseCode = courseCode;
     }
-    public String getCourse_name() {
+    public String getCourseName() {
         return courseName;
     }
-    public void setCourse_name(String course_name) {
-        this.courseName = course_name;
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
     }
     public int getCredits() {
         return credits;
