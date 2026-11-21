@@ -32,7 +32,7 @@ public class GradeController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{       // Xử lí khi người dùng vào trang
         try {
             // 1. Lấy user đang đăng nhập từ session.
-            HttpSession session = request.getSession();
+            HttpSession session = request.getSession(false);
             // int userId = ((User) session.getAttribute("currentUser")).getId();
             int userId = 1;  // hardcode tạm để test
 
