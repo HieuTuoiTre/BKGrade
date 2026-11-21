@@ -1,50 +1,56 @@
 package com.gradecalc.model.Dao;
 
-import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import com.gradecalc.config.CustomConnectionPool;
 import com.gradecalc.model.Bean.Course;
 
 public class CourseDAO {
-    public Course findByCode(String courseCode) throws SQLException, InterruptedException{
+    public Course findByName(String courseName) throws SQLException, InterruptedException {
         Connection conn = null;
         try {
             conn = CustomConnectionPool.getInstance().getConnection();
-            String sql = "SELECT * FROM courses WHERE course_code = ?";
+            String sql = "SELECT * FROM courses WHERE course_name = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, courseCode);
+            ps.setString(1, courseName);
             ResultSet rs = ps.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 int id = rs.getInt("id");
-                String courseName = rs.getString("course_name");
-                int credits = rs.getInt("credits");
-                Course course = new Course(id,courseCode,courseName,credits);
-                return course;
-            }else
+                double credits = rs.getDouble("credits");
+                return new Course(id, courseName, credits);
+            } else {
                 return null;
-        }finally{
+            }
+        } finally {
             CustomConnectionPool.getInstance().releaseConnection(conn);
         }
     }
-    public void save(Course course) throws SQLException, InterruptedException{
+
+    public void save(Course course) throws SQLException, InterruptedException {
         Connection conn = null;
         try {
             conn = CustomConnectionPool.getInstance().getConnection();
-            String sql = "INSERT INTO courses (course_code, course_name, credits) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO courses (course_name, credits) VALUES (?, ?) " +
+                         "ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), credits=VALUES(credits)";
             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, course.getCourseCode());
-            ps.setString(2, course.getCourseName());
-            ps.setInt(3, course.getCredits());
-            ps.execute();
-            ResultSet generatedKeys = ps.getGeneratedKeys();
-            if(generatedKeys.next()){
-                course.setId(generatedKeys.getInt(1));
+            ps.setString(1, course.getCourseName());
+            ps.setDouble(2, course.getCredits());
+            ps.executeUpdate();
+
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                course.setId(rs.getInt(1));
+            } else {
+                Course existing = findByName(course.getCourseName());
+                if (existing != null) {
+                    course.setId(existing.getId());
+                }
             }
-        }finally {
+        } finally {
             CustomConnectionPool.getInstance().releaseConnection(conn);
         }
     }

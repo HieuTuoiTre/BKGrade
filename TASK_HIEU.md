@@ -69,8 +69,7 @@ src/
 Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
 1. Bảng `courses` (Danh mục môn học):
    * `id`: Khóa chính tự tăng (`INT AUTO_INCREMENT PRIMARY KEY`).
-   * `course_code`: Mã học phần (`VARCHAR(50) UNIQUE NOT NULL`, ví dụ: `1022940.2410.24.12`).
-   * `course_name`: Tên môn học (`VARCHAR(150) NOT NULL`).
+   * `course_name`: Tên môn học (`VARCHAR(150) UNIQUE NOT NULL`).
    * `credits`: Số tín chỉ (`DOUBLE NOT NULL DEFAULT 0` — hỗ trợ các môn lẻ `2.5 TC` như Lập trình Java, Lập trình .NET, HDT, HĐH).
 2. Bảng `grades` (Điểm chi tiết của từng sinh viên):
    * `id`: Khóa chính tự tăng.
@@ -95,12 +94,12 @@ Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
 #### Bước 3: Tầng Model - Bean (`Course.java`, `Grade.java`, `SemesterSummary.java`)
 * **Vị trí:** `src/main/java/com/gradecalc/model/Bean/`
 * `Course.java`:
-  * Thuộc tính: `id`, `courseCode`, `courseName`, `credits` (kiểu `double`).
+  * Thuộc tính: `id`, `courseName`, `credits` (kiểu `double`).
 * `Grade.java`:
   * Thuộc tính cốt lõi: `id`, `userId`, `courseId`, `semester`, `formula`.
   * **Thuộc tính 7 điểm thành phần:** `Double scoreBt, scoreBv, scoreCk, scoreDa, scoreGk, scoreQt, scoreTh;` (dùng đối tượng `Double` để nhận giá trị `null`).
   * **Thuộc tính điểm tổng kết:** `Double score10, score4; String scoreLetter;` (dùng `Double` nullable).
-  * Thuộc tính phụ hiển thị giao diện: `courseCode`, `courseName`, `credits` (kiểu `double`).
+  * Thuộc tính phụ hiển thị giao diện: `courseName`, `credits` (kiểu `double`).
   * Đầy đủ Constructor, Getter và Setter chuẩn JavaBean.
 * `SemesterSummary.java`:
   * `totalCredits` dùng `double`.
@@ -108,13 +107,13 @@ Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
 #### Bước 4: Tầng DAO (`CourseDAO.java`, `GradeDAO.java`)
 * **Vị trí:** `src/main/java/com/gradecalc/model/Dao/`
 * **`CourseDAO.java`:**
-  * `findByCode(String courseCode)`: Tìm kiếm môn học theo mã.
+  * `findByName(String courseName)`: Tìm kiếm môn học theo tên môn.
   * `save(Course course)`: Sử dụng câu lệnh:
     ```sql
-    INSERT INTO courses (course_code, course_name, credits) VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), course_name=VALUES(course_name), credits=VALUES(credits)
+    INSERT INTO courses (course_name, credits) VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), credits=VALUES(credits)
     ```
-    Tránh hoàn toàn lỗi `Duplicate entry '...' for key 'courses.course_code'`.
+    Dùng tên môn học làm định danh duy nhất (loại bỏ `course_code` không cần thiết).
 * **`GradeDAO.java`:**
   * `saveGradeList(int userId, List<Grade> gradeList)`: Lưu hoặc cập nhật hàng loạt điểm (Batch update), hỗ trợ ghi nhận đầy đủ 7 điểm thành phần và điểm `null` thông qua `ps.setNull(..., Types.DOUBLE)`.
   * `getGradeByUserId(int userId)`: Truy vấn danh sách toàn bộ điểm (gồm cả 7 điểm thành phần và thông tin môn học).
@@ -130,7 +129,6 @@ Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
   2. Mỗi dòng tách thành các cột bằng ký tự Tab: `line.split("\\t", -1)`. Bỏ qua các dòng tiêu đề hoặc không đủ 14 cột.
   3. Trích xuất thông tin chung:
      * `semester = cols[1].trim()`
-     * `courseCode = cols[3].trim()`
      * `courseName = cols[4].trim()`
      * `credits = Double.parseDouble(cols[5].trim())` (hỗ trợ cả môn `2.5 TC`).
      * `formula = cols[6].trim()`
