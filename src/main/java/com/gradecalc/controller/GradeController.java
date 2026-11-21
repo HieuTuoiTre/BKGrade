@@ -31,11 +31,10 @@ public class GradeController extends HttpServlet {
 
     private int getUserId(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        // Khi ghép nối với Track A của Nghĩa:
-        // if (session != null && session.getAttribute("currentUser") != null) {
-        //     return ((User) session.getAttribute("currentUser")).getId();
-        // }
-        return 1; // User test mặc định
+        if (session != null && session.getAttribute("userId") != null) {
+            return (Integer) session.getAttribute("userId");
+        }
+        return 1; // User test mặc định khi chưa đăng nhập
     }
 
     private Double parseDoubleParam(HttpServletRequest request, String paramName) {

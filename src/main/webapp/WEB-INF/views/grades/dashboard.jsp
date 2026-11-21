@@ -11,47 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        .card-stat {
-            transition: transform 0.2s;
-            border-left: 5px solid;
-        }
-        .card-stat:hover {
-            transform: translateY(-3px);
-        }
-        .badge-grade {
-            font-size: 0.85rem;
-            padding: 0.35em 0.65em;
-        }
-        .table-grades th, .table-grades td {
-            vertical-align: middle;
-            white-space: nowrap;
-            padding: 0.55rem 0.4rem;
-        }
-        .col-comp {
-            width: 42px;
-            min-width: 38px;
-            text-align: center;
-            padding: 0.55rem 0.2rem !important;
-            font-size: 0.88rem;
-        }
-        .text-null {
-            color: #adb5bd;
-            font-weight: normal;
-        }
-        .formula-pill {
-            background-color: #f1f3f5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.78rem;
-            color: #495057;
-            display: inline-block;
-            max-width: 220px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    </style>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css">
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
 
@@ -284,7 +245,22 @@
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                         title="Sửa điểm / Dự báo GPA"
-                                                        onclick="openEditModal(${g.id}, '${g.courseName}', '${g.semester}', ${g.credits}, '${g.formula}', '${g.scoreBt}', '${g.scoreBv}', '${g.scoreCk}', '${g.scoreDa}', '${g.scoreGk}', '${g.scoreQt}', '${g.scoreTh}', '${g.score10}', '${g.score4}', '${g.scoreLetter}')">
+                                                        data-id="${g.id}"
+                                                        data-name="${g.courseName}"
+                                                        data-sem="${g.semester}"
+                                                        data-credits="${g.credits}"
+                                                        data-formula="${g.formula}"
+                                                        data-bt="${g.scoreBt}"
+                                                        data-bv="${g.scoreBv}"
+                                                        data-ck="${g.scoreCk}"
+                                                        data-da="${g.scoreDa}"
+                                                        data-gk="${g.scoreGk}"
+                                                        data-qt="${g.scoreQt}"
+                                                        data-th="${g.scoreTh}"
+                                                        data-s10="${g.score10}"
+                                                        data-s4="${g.score4}"
+                                                        data-sletter="${g.scoreLetter}"
+                                                        onclick="openEditModalFromBtn(this)">
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
                                                 <form action="grades" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa môn này khỏi bảng điểm?');">
@@ -550,104 +526,7 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        function openEditModal(id, name, sem, credits, formula, bt, bv, ck, da, gk, qt, th, s10, s4, sLetter) {
-            document.getElementById('editGradeId').value = id;
-            document.getElementById('editCourseName').innerText = name;
-            document.getElementById('editSemester').innerText = sem;
-            document.getElementById('editCreditsBadge').innerText = credits + ' Tín chỉ';
-            document.getElementById('editFormula').value = (formula === 'null' || !formula) ? '' : formula;
-
-            document.getElementById('editScoreBt').value = (bt === 'null' || !bt) ? '' : bt;
-            document.getElementById('editScoreBv').value = (bv === 'null' || !bv) ? '' : bv;
-            document.getElementById('editScoreCk').value = (ck === 'null' || !ck) ? '' : ck;
-            document.getElementById('editScoreDa').value = (da === 'null' || !da) ? '' : da;
-            document.getElementById('editScoreGk').value = (gk === 'null' || !gk) ? '' : gk;
-            document.getElementById('editScoreQt').value = (qt === 'null' || !qt) ? '' : qt;
-            document.getElementById('editScoreTh').value = (th === 'null' || !th) ? '' : th;
-
-            document.getElementById('editScore10').value = (s10 === 'null' || !s10) ? '' : s10;
-            document.getElementById('editScore4').value = (s4 === 'null' || !s4) ? '' : s4;
-            document.getElementById('editScoreLetter').value = (sLetter === 'null' || !sLetter) ? '' : sLetter;
-
-            var modal = new bootstrap.Modal(document.getElementById('editGradeModal'));
-            modal.show();
-        }
-
-        function calculateSimulator(prefix) {
-            const formula = document.getElementById(prefix + 'Formula').value.trim();
-            if (!formula) return;
-
-            const scores = {
-                'BT': parseNum(document.getElementById(prefix + 'ScoreBt').value),
-                'BV': parseNum(document.getElementById(prefix + 'ScoreBv').value),
-                'CK': parseNum(document.getElementById(prefix + 'ScoreCk').value),
-                'DA': parseNum(document.getElementById(prefix + 'ScoreDa').value),
-                'GK': parseNum(document.getElementById(prefix + 'ScoreGk').value),
-                'QT': parseNum(document.getElementById(prefix + 'ScoreQt').value),
-                'TH': parseNum(document.getElementById(prefix + 'ScoreTh').value)
-            };
-
-            const regex = /\[([A-Za-z0-9_]+)\]\s*\*\s*([0-9.]+)/g;
-            let match;
-            let total = 0;
-            let totalWeight = 0;
-            let complete = true;
-
-            while ((match = regex.exec(formula)) !== null) {
-                const comp = match[1].toUpperCase();
-                const weight = parseFloat(match[2]);
-                totalWeight += weight;
-
-                if (scores[comp] === null || isNaN(scores[comp])) {
-                    complete = false;
-                } else {
-                    total += scores[comp] * weight;
-                }
-            }
-
-            if (complete && totalWeight > 0) {
-                const s10 = Math.round(total * 10) / 10;
-                document.getElementById(prefix + 'Score10').value = s10;
-                syncFromScore10(prefix);
-            }
-        }
-
-        function syncFromScore10(prefix) {
-            const val = parseNum(document.getElementById(prefix + 'Score10').value);
-            if (val === null) {
-                document.getElementById(prefix + 'Score4').value = '';
-                document.getElementById(prefix + 'ScoreLetter').value = '';
-                return;
-            }
-
-            let s4 = 0.0;
-            let letter = 'F';
-
-            if (val >= 8.5) { s4 = 4.0; letter = 'A'; }
-            else if (val >= 8.0) { s4 = 3.5; letter = 'B+'; }
-            else if (val >= 7.0) { s4 = 3.0; letter = 'B'; }
-            else if (val >= 6.5) { s4 = 2.5; letter = 'C+'; }
-            else if (val >= 5.5) { s4 = 2.0; letter = 'C'; }
-            else if (val >= 5.0) { s4 = 1.5; letter = 'D+'; }
-            else if (val >= 4.0) { s4 = 1.0; letter = 'D'; }
-            else { s4 = 0.0; letter = 'F'; }
-
-            document.getElementById(prefix + 'Score4').value = s4.toFixed(1);
-            document.getElementById(prefix + 'ScoreLetter').value = letter;
-        }
-
-        function setFormulaPreset(prefix, formulaStr) {
-            document.getElementById(prefix + 'Formula').value = formulaStr;
-            calculateSimulator(prefix);
-        }
-
-        function parseNum(val) {
-            if (val === undefined || val === null || val.trim() === '') return null;
-            const n = parseFloat(val);
-            return isNaN(n) ? null : n;
-        }
-    </script>
+    <!-- Dashboard JS -->
+    <script src="${pageContext.request.contextPath}/assets/js/dashboard.js"></script>
 </body>
 </html>
