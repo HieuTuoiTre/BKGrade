@@ -1,0 +1,40 @@
+/* BKGrade Calc - Custom Styles */
+.card-stat {
+    transition: transform 0.2s;
+    border-left: 5px solid;
+}
+.card-stat:hover {
+    transform: translateY(-3px);
+}
+.badge-grade {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+.table-grades th, .table-grades td {
+    vertical-align: middle;
+    white-space: nowrap;
+    padding: 0.55rem 0.4rem;
+}
+.col-comp {
+    width: 42px;
+    min-width: 38px;
+    text-align: center;
+    padding: 0.55rem 0.2rem !important;
+    font-size: 0.88rem;
+}
+.text-null {
+    color: #adb5bd;
+    font-weight: normal;
+}
+.formula-pill {
+    background-color: #f1f3f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: #495057;
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
