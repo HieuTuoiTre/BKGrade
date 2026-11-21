@@ -1,8 +1,26 @@
 # KẾ HOẠCH PHÂN CÔNG CÔNG VIỆC: BẠN HIẾU (TRACK B)
-## Phân hệ: Bóc Tách Bảng Điểm DUT, Quản Lý Điểm, Connection Pool & Cân Bằng Tải
+## Phân hệ: Bóc Tách Bảng Điểm DUT, Quản Lý Điểm Thành Phần, Công Thức Điểm, Connection Pool & Cân Bằng Tải
 
 > **Mục tiêu chính:** 
-> Làm chủ toàn bộ chu trình MVC cho phân hệ Quản lý Điểm (từ CSDL đến Giao diện JSP), xây dựng tính năng "sát thủ" tự động bóc tách bảng điểm copy từ web DUT, tự viết **Custom Connection Pool**, cấu hình **Cân bằng tải (Load Balancing)** trên Apache XAMPP và **Deploy lên mạng**.
+> Làm chủ toàn bộ chu trình MVC cho phân hệ Quản lý Điểm (từ CSDL đến Giao diện JSP), xây dựng tính năng "sát thủ":
+> 1. Bóc tách tự động bảng điểm copy từ `sv.dut.udn.vn` (hỗ trợ đầy đủ 7 cột điểm thành phần: `BT`, `BV`, `CK`, `DA`, `GK`, `QT`, `TH`, các môn lẻ `2.5 TC`, và các môn đang học chưa có điểm tổng kết).
+> 2. **Bộ máy tính điểm theo công thức (`formula`):** Tự động tính điểm hệ 10 từ các điểm thành phần theo đúng công thức của từng môn (ví dụ: `[GK]*0.20+[BT]*0.20+[CK]*0.60`, `[QT]*0.40+[BV]*0.60`, `[CK]*1.00`), từ đó tự quy đổi ra điểm hệ 4 và điểm chữ theo quy chế tín chỉ DUT.
+> 3. **GPA Simulator & Quản lý điểm linh hoạt:** Cho phép chỉnh sửa từng ô điểm thành phần, nhập điểm dự kiến cho các môn đang học, thêm môn học thủ công bằng tay.
+> 4. Tự viết **Custom Connection Pool** chịu tải cao, khắc phục triệt để lỗi timeout TiDB Cloud.
+> 5. Cấu hình **Cân bằng tải (Load Balancing)** trên Apache XAMPP và **Deploy lên mạng qua Cloudflare Tunnel**.
+
+---
+
+### Tiến độ thực hiện (Checklist)
+* [x] **Bước 1:** Tự viết `CustomConnectionPool.java` (Singleton, BlockingQueue, chống timeout TiDB Cloud).
+* [x] **Bước 2:** Cấu hình CSDL (`schema.sql`, `courses.sql`, 7 cột điểm thành phần, loại bỏ `course_code`, khóa `UNIQUE` theo tên môn).
+* [x] **Bước 3:** Tầng Bean (`Course.java`, `Grade.java`, `SemesterSummary.java`).
+* [x] **Bước 4:** Tầng DAO (`CourseDAO.java`, `GradeDAO.java` - hỗ trợ điểm `null`, sắp xếp tăng dần theo học kỳ).
+* [x] **Bước 5:** Bóc tách dữ liệu DUT 19 cột (`DutParserBO.java` - xử lý môn đang học, nhận diện môn 0 TC GDTC đạt).
+* [x] **Bước 6:** Engine tính điểm công thức & CPA chuẩn DUT (`GradeCalculatorBO.java` - chuẩn 82 TC, 3.23 CPA).
+* [x] **Bước 7:** Giao diện & Điều hướng (`GradeController.java`, `dashboard.jsp` - hiển thị trọn vẹn 16 cột với `container-fluid`, bảng có cột Công thức, modal có gợi ý công thức mẫu, tự động đồng bộ điểm 10 ➔ thang 4 ➔ chữ).
+* [ ] **Bước 8:** Cấu hình Cân bằng tải (Load Balancing) với Apache XAMPP & 2 node Tomcat (8080 & 8081).
+* [ ] **Bước 9:** Deploy Public Internet qua Cloudflare Tunnel (`cloudflared`).
 
 ---
 
@@ -13,33 +31,33 @@ src/
 ├── main/
 │   ├── java/com/gradecalc/
 │   │   ├── config/
-│   │   │   └── CustomConnectionPool.java   <- [TRỌNG TÂM] Tự viết Connection Pool
+│   │   │   └── CustomConnectionPool.java   <- [TRỌNG TÂM] Tự viết Connection Pool chịu tải, chống timeout TiDB
 │   │   ├── model/
 │   │   │   ├── Bean/
-│   │   │   │   ├── Course.java             <- Entity môn học (JavaBean)
-│   │   │   │   ├── Grade.java              <- Entity bảng điểm chi tiết (JavaBean)
+│   │   │   │   ├── Course.java             <- Entity môn học (JavaBean, credits double)
+│   │   │   │   ├── Grade.java              <- Entity bảng điểm đầy đủ 7 điểm thành phần (JavaBean)
 │   │   │   │   └── SemesterSummary.java    <- Đối tượng tổng kết GPA/CPA (DTO/Bean)
 │   │   │   ├── Bo/
-│   │   │   │   ├── DutParserBO.java        <- [TÍNH NĂNG ĐỈNH] Bóc tách text copy từ DUT
-│   │   │   │   └── GradeCalculatorBO.java  <- Thuật toán tính GPA hệ 10, hệ 4, xếp loại
+│   │   │   │   ├── DutParserBO.java        <- [TÍNH NĂNG ĐỈNH] Bóc tách 19 cột từ DUT (kể cả môn đang học)
+│   │   │   │   └── GradeCalculatorBO.java  <- Engine tính điểm theo công thức & thuật toán CPA chuẩn DUT
 │   │   │   └── Dao/
-│   │   │       ├── CourseDAO.java          <- Tương tác DB bảng courses
-│   │   │       └── GradeDAO.java           <- Tương tác DB bảng grades
+│   │   │       ├── CourseDAO.java          <- Tương tác DB bảng courses (ON DUPLICATE KEY UPDATE)
+│   │   │       └── GradeDAO.java           <- Tương tác DB bảng grades (Lưu & cập nhật 7 điểm thành phần)
 │   │   └── controller/
-│   │       └── GradeController.java        <- Servlet xử lý /grades, /import-grades
+│   │       └── GradeController.java        <- Servlet xử lý /grades (import, edit, update, add thủ công)
 │   └── webapp/
 │       ├── assets/
 │       │   ├── css/style.css               <- Tùy biến style giao diện
 │       │   ├── images/                     <- Ảnh minh họa, logo DUT
 │       │   └── videos/                     <- Video hướng dẫn copy bảng điểm
-│       ├── index.jsp                       <- [MỚI] Trang chủ / Landing Page công khai
+│       ├── index.jsp                       <- Trang chủ / Landing Page công khai
 │       └── WEB-INF/
 │           └── views/
 │               ├── layout/
-│               │   ├── navbar.jsp          <- [MỚI] Thanh điều hướng dùng chung
-│               │   └── footer.jsp          <- [MỚI] Chân trang dùng chung
+│               │   ├── navbar.jsp          <- Thanh điều hướng dùng chung
+│               │   └── footer.jsp          <- Chân trang dùng chung
 │               └── grades/
-│                   └── dashboard.jsp       <- Giao diện Dashboard dán bảng điểm & xem kết quả
+│                   └── dashboard.jsp       <- Dashboard hiển thị điểm thành phần, công thức & GPA Simulator
 ```
 
 ---
@@ -48,7 +66,7 @@ src/
 
 #### Bước 1: Nhiệm vụ Kỹ thuật 1: Tự viết `CustomConnectionPool.java` (Thầy chấm điểm)
 * **Vị trí:** `src/main/java/com/gradecalc/config/CustomConnectionPool.java`
-* **Mục tiêu:** Cấp phát và quản lý kết nối CSDL MySQL cho toàn bộ ứng dụng, giải quyết bài toán chịu tải cao.
+* **Mục tiêu:** Cấp phát và quản lý kết nối CSDL MySQL/TiDB cho toàn bộ ứng dụng, giải quyết bài toán chịu tải cao.
 * **Cơ chế triển khai:**
   * Áp dụng mẫu thiết kế **Singleton Pattern** (chỉ có duy nhất 1 bể kết nối trong suốt vòng đời ứng dụng).
   * Sử dụng hàng đợi an toàn đa luồng `BlockingQueue<Connection>` (hoặc `ArrayBlockingQueue<Connection>`).
@@ -56,84 +74,136 @@ src/
     * `INITIAL_POOL_SIZE = 5` (mở sẵn 5 kết nối khi khởi động web).
     * `MAX_POOL_SIZE = 15` (tối đa 15 kết nối cùng lúc).
   * Viết 2 phương thức cốt lõi:
-    * `public Connection getConnection()`: Lấy một kết nối đang rảnh ra khỏi hàng đợi. Nếu hết kết nối thì chờ (blocking) hoặc tạo mới nếu chưa vượt quá `MAX_POOL_SIZE`.
+    * `public Connection getConnection()`: Lấy kết nối rảnh từ hàng đợi. Bắt buộc kiểm tra `conn.isClosed() || !conn.isValid(2)` trong khối `try-catch` an toàn. Nếu kết nối bị ngắt do TiDB idle timeout thì tự động tái tạo kết nối mới bù vào, triệt tiêu lỗi `No operations allowed after connection closed`.
     * `public void releaseConnection(Connection conn)`: Đưa kết nối trở lại hàng đợi sau khi DAO truy vấn xong (tuyệt đối không gọi `conn.close()` để tránh làm chết kết nối).
-  * Viết một hàm `main()` độc lập ngay trong file để test cấp phát và thu hồi 10 kết nối cùng lúc thành công.
+  * Thêm tham số `autoReconnect=true` vào JDBC URL để đảm bảo tính ổn định trên môi trường Cloud.
 
 #### Bước 2: Cơ sở dữ liệu (Database)
-Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
+Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
 1. Bảng `courses` (Danh mục môn học):
+   * `id`: Khóa chính tự tăng (`INT AUTO_INCREMENT PRIMARY KEY`).
+   * `course_name`: Tên môn học (`VARCHAR(150) UNIQUE NOT NULL`).
+   * `credits`: Số tín chỉ (`DOUBLE NOT NULL DEFAULT 0` — hỗ trợ các môn lẻ `2.5 TC` như Lập trình Java, Lập trình .NET, HDT, HĐH).
+2. Bảng `grades` (Điểm chi tiết của từng sinh viên):
    * `id`: Khóa chính tự tăng.
-   * `course_code`: Mã học phần (ví dụ: `1022940.2410.24.12`).
-   * `course_name`: Tên môn học (`Nhập môn ngành`, `Triết học Mác - Lênin`).
-   * `credits`: Số tín chỉ (`INT`).
-2. Bảng `grades` (Điểm chi tiết của từng người dùng):
-   * `id`: Khóa chính tự tăng.
-   * `user_id`: Khóa ngoại liên kết với bảng `users.id` của bạn Nghĩa.
-   * `course_id`: Khóa ngoại liên kết với bảng `courses.id`.
-   * `semester`: Học kỳ (ví dụ: `1/2024-2025`, `2/2024-2025`).
-   * `formula`: Công thức tính điểm (ví dụ: `[GK]*0.30+[BT]*0.20+[CK]*0.50`).
-   * `score_10`: Điểm tổng kết hệ 10 (`DOUBLE`).
-   * `score_4`: Điểm hệ 4 (`DOUBLE`).
-   * `grade_letter`: Điểm chữ (`VARCHAR(5)`, ví dụ: `A`, `B+`, `C`...).
+   * `user_id`: Khóa ngoại liên kết `users.id` của bạn Nghĩa.
+   * `course_id`: Khóa ngoại liên kết `courses.id`.
+   * `semester`: Học kỳ (ví dụ: `1/2026-2027`, `2/2025-2026`).
+   * `formula`: Công thức tính điểm (ví dụ: `[GK]*0.20+[BT]*0.20+[CK]*0.60`, `[QT]*0.40+[BV]*0.60`, `[CK]*1.00`).
+   * **7 Cột điểm thành phần chuẩn DUT:**
+     * `score_bt`: Điểm Bài tập (`DOUBLE NULL`).
+     * `score_bv`: Điểm Bảo vệ (`DOUBLE NULL`).
+     * `score_ck`: Điểm Cuối kỳ (`DOUBLE NULL`).
+     * `score_da`: Điểm Đồ án (`DOUBLE NULL`).
+     * `score_gk`: Điểm Giữa kỳ (`DOUBLE NULL`).
+     * `score_qt`: Điểm Quá trình (`DOUBLE NULL`).
+     * `score_th`: Điểm Thực hành (`DOUBLE NULL`).
+   * **Các cột điểm tổng kết:**
+     * `score_10`: Điểm tổng kết hệ 10 (`DOUBLE NULL` — cho phép NULL khi môn đang học chưa có điểm).
+     * `score_4`: Điểm hệ 4 (`DOUBLE NULL` — cho phép NULL).
+     * `score_letter`: Điểm chữ (`VARCHAR(5) NULL` — A, B+, C, D, F...; để trống nếu môn đang học).
+   * Khóa duy nhất chống trùng lặp: `UNIQUE KEY uk_user_course_sem (user_id, course_id, semester)`.
 
 #### Bước 3: Tầng Model - Bean (`Course.java`, `Grade.java`, `SemesterSummary.java`)
 * **Vị trí:** `src/main/java/com/gradecalc/model/Bean/`
-* Tạo 3 lớp: `Course.java`, `Grade.java`, và `SemesterSummary.java` (chứa các thuộc tính: `totalCredits`, `gpa10`, `gpa4`, `academicRank`).
-* Đầy đủ thuộc tính `private`, hàm khởi tạo (constructor rỗng và đầy đủ tham số), và các hàm Getter/Setter chuẩn JavaBean.
+* `Course.java`:
+  * Thuộc tính: `id`, `courseName`, `credits` (kiểu `double`).
+* `Grade.java`:
+  * Thuộc tính cốt lõi: `id`, `userId`, `courseId`, `semester`, `formula`.
+  * **Thuộc tính 7 điểm thành phần:** `Double scoreBt, scoreBv, scoreCk, scoreDa, scoreGk, scoreQt, scoreTh;` (dùng đối tượng `Double` để nhận giá trị `null`).
+  * **Thuộc tính điểm tổng kết:** `Double score10, score4; String scoreLetter;` (dùng `Double` nullable).
+  * Thuộc tính phụ hiển thị giao diện: `courseName`, `credits` (kiểu `double`).
+  * Đầy đủ Constructor, Getter và Setter chuẩn JavaBean.
+* `SemesterSummary.java`:
+  * `totalCredits` dùng `double`.
 
 #### Bước 4: Tầng DAO (`CourseDAO.java`, `GradeDAO.java`)
 * **Vị trí:** `src/main/java/com/gradecalc/model/Dao/`
-* Các hàm DAO sẽ mượn kết nối từ `CustomConnectionPool.getInstance().getConnection()` và trả lại trong khối `finally { CustomConnectionPool.getInstance().releaseConnection(conn); }`.
-* Viết hàm `saveGradeList(int userId, List<Grade> list)` để lưu một danh sách điểm vừa bóc tách vào DB.
-* Viết hàm `getGradesByUserId(int userId)` để lấy toàn bộ điểm của sinh viên đang đăng nhập.
+* **`CourseDAO.java`:**
+  * `findByName(String courseName)`: Tìm kiếm môn học theo tên môn.
+  * `save(Course course)`: Sử dụng câu lệnh:
+    ```sql
+    INSERT INTO courses (course_name, credits) VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), credits=VALUES(credits)
+    ```
+    Dùng tên môn học làm định danh duy nhất (loại bỏ `course_code` không cần thiết).
+* **`GradeDAO.java`:**
+  * `saveGradeList(int userId, List<Grade> gradeList)`: Lưu hoặc cập nhật hàng loạt điểm (Batch update), hỗ trợ ghi nhận đầy đủ 7 điểm thành phần và điểm `null` thông qua `ps.setNull(..., Types.DOUBLE)`.
+  * `getGradeByUserId(int userId)`: Truy vấn danh sách toàn bộ điểm (gồm cả 7 điểm thành phần và thông tin môn học).
+  * `updateGrade(int gradeId, Grade grade)`: Cập nhật điểm thành phần hoặc điểm tổng kết của một môn học sau khi sinh viên chỉnh sửa trên giao diện.
+  * `addManualGrade(int userId, Grade grade)`: Thêm một môn học và điểm nhập tay thủ công.
+  * `deleteGrade(int gradeId)`: Cho phép xóa một môn học khỏi bảng điểm cá nhân.
 
-#### Bước 5: Tầng BO 1: `DutParserBO.java` (Bộ não bóc tách dữ liệu DUT)
-* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/`
-* Nhận chuỗi thô người dùng paste vào từ giao diện.
-* **Quy trình thuật toán:**
-  1. Tách chuỗi thành các dòng: `String[] lines = rawText.split("\\r?\\n");`.
-  2. Với mỗi dòng, tách thành các cột theo ký tự Tab: `String[] cols = line.split("\\t", -1);`.
-  3. Trích xuất thông tin:
+#### Bước 5: Tầng BO 1: `DutParserBO.java` (Bộ não bóc tách dữ liệu DUT 19 cột)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/DutParserBO.java`
+* Nhận chuỗi thô copy từ `sv.dut.udn.vn/PageKQRL.aspx`.
+* **Quy trình thuật toán theo cấu trúc 19 cột chuẩn:**
+  1. Tách chuỗi thành từng dòng: `rawText.split("\\r?\\n")`.
+  2. Mỗi dòng tách thành các cột bằng ký tự Tab: `line.split("\\t", -1)`. Bỏ qua các dòng tiêu đề hoặc không đủ 14 cột.
+  3. Trích xuất thông tin chung:
      * `semester = cols[1].trim()`
-     * `courseCode = cols[3].trim()`
      * `courseName = cols[4].trim()`
-     * `credits = Integer.parseInt(cols[5].trim())`
+     * `credits = Double.parseDouble(cols[5].trim())` (hỗ trợ cả môn `2.5 TC`).
      * `formula = cols[6].trim()`
-  4. **Thuật toán quét ngược (Reverse Scanning) lấy điểm:**
-     * Quét từ cột cuối cùng của hàng trở về trước để tìm cột chứa chữ cái xếp loại (`A+`, `A`, `B+`, `B`, `C+`, `C`, `D+`, `D`, `F`).
-     * Lấy giá trị ngay trước đó làm Điểm hệ 4 (`score_4`).
-     * Lấy giá trị ngay trước nữa làm Điểm hệ 10 (`score_10`).
-  5. Đóng gói vào đối tượng `Grade` và trả về danh sách `List<Grade>`.
+  4. **Trích xuất 7 cột điểm thành phần (từ cột 7 đến 13):**
+     * `cols[7]`: `BT` (Bài tập)
+     * `cols[8]`: `BV` (Bảo vệ)
+     * `cols[9]`: `CK` (Cuối kỳ)
+     * `cols[10]`: `DA` (Đồ án)
+     * `cols[11]`: `GK` (Giữa kỳ)
+     * `cols[12]`: `QT` (Quá trình)
+     * `cols[13]`: `TH` (Thực hành)
+     *(Sử dụng hàm helper `parseDoubleOrNull(cols[i])` để gán `Double` hoặc `null` nếu ô trống).*
+  5. **Bóc tách điểm tổng kết linh hoạt (hỗ trợ môn đang học):**
+     * Kiểm tra xem các cột 14, 15, 16 có dữ liệu điểm chữ hợp lệ (`A+`, `A`, `B+`, `B`, `C+`, `C`, `D+`, `D`, `F`) hay không.
+     * **Trường hợp môn đã có điểm:** Lấy `score_10` (cột 14), `score_4` (cột 15), `scoreLetter` (cột 16).
+     * **Trường hợp môn đang học (chưa có điểm chữ):** Vẫn lưu môn học vào danh sách, giữ các điểm thành phần đã có (ví dụ: `GK = 5.0`), còn `score10 = null`, `score4 = null`, `scoreLetter = null`.
+  6. Đóng gói vào đối tượng `Grade` và trả về `List<Grade>`.
 
-#### Bước 6: Tầng BO 2: `GradeCalculatorBO.java` (Thuật toán tính GPA chuẩn đại học)
-* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/`
-* Tính toán GPA học kỳ và CPA tích lũy:
+#### Bước 6: Tầng BO 2: `GradeCalculatorBO.java` (Bộ máy tính điểm theo công thức & chuẩn CPA DUT)
+* **Vị trí:** `src/main/java/com/gradecalc/model/Bo/GradeCalculatorBO.java`
+* **1. Engine tính điểm theo công thức (`calculateScoreByFormula`):**
+  * Đọc chuỗi công thức dạng `[GK]*0.20+[BT]*0.20+[CK]*0.60` hoặc `[QT]*0.40+[BV]*0.60`.
+  * Thay thế các token `[BT]`, `[BV]`, `[CK]`, `[DA]`, `[GK]`, `[QT]`, `[TH]` bằng điểm số thực tế tương ứng.
+  * Nếu các điểm thành phần tham gia vào công thức đã được nhập đủ:
+    * Tính ra `score_10` (làm tròn 1 chữ số thập phân).
+    * Tự động quy đổi ra `score_4` và `score_letter` theo chuẩn tín chỉ DUT:
+      * $8.5 \le \text{Điểm 10} \le 10.0 \implies 4.0$ (Điểm A)
+      * $8.0 \le \text{Điểm 10} < 8.5 \implies 3.5$ (Điểm B+)
+      * $7.0 \le \text{Điểm 10} < 8.0 \implies 3.0$ (Điểm B)
+      * $6.5 \le \text{Điểm 10} < 7.0 \implies 2.5$ (Điểm C+)
+      * $5.5 \le \text{Điểm 10} < 6.5 \implies 2.0$ (Điểm C)
+      * $5.0 \le \text{Điểm 10} < 5.5 \implies 1.5$ (Điểm D+)
+      * $4.0 \le \text{Điểm 10} < 5.0 \implies 1.0$ (Điểm D)
+      * $\text{Điểm 10} < 4.0 \implies 0.0$ (Điểm F)
+* **2. Thuật toán tính GPA học kỳ và CPA tích lũy toàn khóa:**
   $$\text{GPA} = \frac{\sum (\text{Điểm hệ 4} \times \text{Số tín chỉ})}{\sum \text{Số tín chỉ}}$$
-* **Xử lý môn 0 tín chỉ:** Môn có `credits == 0` (như Giáo dục thể chất, môn thực hành gộp) **không được cộng vào mẫu số tổng số tín chỉ tích lũy**.
-* Xếp loại học lực theo quy chế:
-  * Xuất sắc: $\text{GPA} \ge 3.6$
-  * Giỏi: $3.2 \le \text{GPA} < 3.6$
-  * Khá: $2.5 \le \text{GPA} < 3.2$
-  * Trung bình: $2.0 \le \text{GPA} < 2.5$
-  * Yếu / Cảnh báo: $\text{GPA} < 2.0$
+  * **Quy tắc vàng:**
+    * Bỏ qua các môn có `credits == 0` (GDTC, GDQP).
+    * Bỏ qua các môn **chưa có điểm tổng kết (`score4 == null`)** — tuyệt đối không cộng vào mẫu số tổng tín chỉ để không làm tụt CPA thực tế của sinh viên.
+    * Khi tính toán đầy đủ các môn `2.5 TC`, điểm tích lũy thang 4 phải ra đúng **3.23** (khớp hoàn hảo 100% với cổng thông tin sinh viên `sv.dut.udn.vn`).
+* **3. Xếp loại học lực:** Xuất sắc ($\ge 3.6$), Giỏi ($3.2 - 3.59$), Khá ($2.5 - 3.19$), Trung bình ($2.0 - 2.49$), Yếu/Cảnh báo ($< 2.0$).
 
-#### Bước 7: Tầng View & Controller (`index.jsp`, `dashboard.jsp`, `GradeController.java`)
-* **1. Trang chủ công khai (`index.jsp` tại thư mục gốc `webapp/`):**
-  * Thiết kế Landing Page chào mừng với Bootstrap 5.
-  * Giới thiệu dự án, thông tin nhóm sinh viên thực hiện (Hiếu & Nghĩa - Khoa CNTT, ĐH Bách Khoa ĐN).
-  * Khối Video ở giữa màn hình hướng dẫn thao tác copy bảng điểm từ trang `sv.dut.udn.vn` rồi dán vào hệ thống.
-  * Nút kêu gọi hành động (Call to action): "Đăng nhập ngay", "Trải nghiệm ngay" dẫn tới `/login`.
-* **2. Các thành phần giao diện dùng chung (`views/layout/`):**
-  * `navbar.jsp`: Thanh điều hướng có logo, menu và các nút Đăng nhập/Đăng xuất.
-  * `footer.jsp`: Chân trang thông tin bản quyền và trường ĐH Bách Khoa.
-* **3. Trang Dashboard tính điểm (`views/grades/dashboard.jsp`):**
-  * Thiết kế khung `<textarea>` lớn có hướng dẫn: *"Copy bảng điểm từ trang sv.dut.udn.vn và dán vào đây"*.
-  * Bảng điểm dạng Table Bootstrap hiển thị: Mã môn, Tên môn, Số TC, Công thức, Điểm 10, Điểm 4, Điểm chữ (có màu sắc bắt mắt: A màu xanh lá, F màu đỏ).
-  * 3 thẻ tóm tắt (Cards) ở trên đầu: **Tổng tín chỉ tích lũy**, **Điểm trung bình (GPA/CPA)**, **Xếp loại học lực**.
-* **4. `GradeController.java` (`@WebServlet("/grades")`):**
-  * `doGet()`: Lấy dữ liệu điểm hiện có của sinh viên từ DB và chuyển tiếp sang `/WEB-INF/views/grades/dashboard.jsp`.
-  * `doPost()`: Nhận chuỗi text từ form -> gọi `DutParserBO` -> gọi `GradeCalculatorBO` -> lưu vào DB qua `GradeDAO` -> trả kết quả ra `dashboard.jsp`.
+#### Bước 7: Tầng View & Controller (`GradeController.java`, `dashboard.jsp`)
+* **1. `GradeController.java` (`@WebServlet("/grades")`):**
+  * `doGet()`: Lấy danh sách điểm từ DB ➔ Tính tổng kết toàn khóa và từng kỳ ➔ Gửi dữ liệu sang `dashboard.jsp`.
+  * `doPost()`: Xử lý các nghiệp vụ qua tham số `action`:
+    * `action=import` (mặc định): Bóc tách text copy từ DUT ➔ Lưu DB ➔ Hiển thị kết quả.
+    * `action=update`: Cập nhật điểm của một môn học (khi sinh viên sửa điểm thành phần hoặc điểm tổng kết trên giao diện). Nếu có công thức, tự động gọi `GradeCalculatorBO` để tính lại điểm tổng kết.
+    * `action=add`: Thêm môn học thủ công do người dùng tự nhập tay các thông tin và điểm số.
+* **2. Trang Dashboard tính điểm (`dashboard.jsp`):**
+  * **Khối tóm tắt (3 Cards):** Tổng tín chỉ tích lũy (ví dụ: `82 TC`), Điểm trung bình GPA/CPA (`3.23 / 4.0`), Xếp loại học lực (`Giỏi`).
+  * **Khối nhập liệu bảng điểm:** Vùng `<textarea>` dán bảng điểm DUT.
+  * **Nút bấm & Modal "Thêm môn học thủ công":** Nhập Học kỳ, Tên môn học, Số TC (hỗ trợ nhập số lẻ như `2.5`), Công thức tính điểm (có sẵn preset bấm chọn nhanh), và các điểm thành phần. (Đã loại bỏ hoàn toàn Mã học phần thừa).
+  * **Bảng chi tiết điểm học phần:**
+    * Cột hiển thị: STT, Học kỳ, Tên môn, Số TC, **Công thức**, **Các điểm thành phần (`BT`, `BV`, `CK`, `DA`, `GK`, `QT`, `TH`)**, Thang 10, Thang 4, Điểm chữ, Thao tác.
+    * **Bố cục toàn màn hình:** Sử dụng `container-fluid px-lg-4 px-3` với độ rộng các cột tối ưu (`.col-comp { width: 42px; }`) giúp bảng 16 cột hiển thị trọn vẹn, không bị mất cột Thao tác bên phải.
+    * **Đảm bảo toàn vẹn dữ liệu:** Thang 4 và Điểm chữ được đặt `readonly`, tự động tính toán đồng bộ theo Thang 10 (Cách 1) nhằm loại trừ rủi ro xung đột dữ liệu.
+    * **Thứ tự sắp xếp:** Sắp xếp theo tiến trình thời gian học (môn học trước lên trước, từ học kỳ năm nhất đến học kỳ mới nhất).
+    * Với môn đã có kết quả: Hiển thị badge điểm chữ màu sắc theo chuẩn (A, B+, B, C+, C, D+, D, F).
+    * Với môn 0 TC (GDTC/GDQP): Tự động nhận diện và gắn nhãn **Đạt** (`badge bg-success`) thay vì nhận nhầm là đang học.
+    * Với môn chuyên ngành đang học (chưa có điểm tổng kết): Hiển thị badge mờ `Đang học`.
+    * **GPA Simulator & Nút Sửa điểm (✏️):** Modal cho phép sinh viên click sửa bất kỳ ô điểm nào (nhập điểm GK, nhập thử điểm CK dự kiến) ➔ Bấm lưu ➔ Hệ thống tự động tính điểm 10, cập nhật điểm chữ và vẽ lại GPA toàn khóa tức thì!
 
 ---
 
@@ -178,7 +248,14 @@ Tạo 2 bảng trong MySQL (thêm vào file `database/schema.sql`):
 * **Thầy hỏi:** *"Em viết Connection Pool như thế nào và tại sao cần nó?"*
 * **Hiếu trả lời:**
   > *"Thưa thầy, thông thường mỗi request tạo một kết nối mới tới MySQL sẽ tốn rất nhiều thời gian bắt tay TCP và dễ làm sập DB khi có nhiều người truy cập.  
-  > Em đã tự xây dựng lớp CustomConnectionPool theo mô hình Singleton, sử dụng BlockingQueue để giữ sẵn một bể từ 5 đến 15 kết nối mở sẵn. Khi DAO cần truy vấn, nó mượn kết nối từ bể, thực hiện xong câu lệnh thì trả kết nối về bể chứ không đóng lại. Nhờ đó giảm tải 90% chi phí khởi tạo kết nối."*
+  > Em đã tự xây dựng lớp CustomConnectionPool theo mô hình Singleton, sử dụng BlockingQueue để giữ sẵn một bể từ 5 đến 15 kết nối mở sẵn. Khi DAO cần truy vấn, nó mượn kết nối từ bể, thực hiện xong câu lệnh thì trả kết nối về bể chứ không đóng lại.  
+  > Đặc biệt, em có cài đặt cơ chế kiểm tra kết nối `conn.isValid(2)` tự phục hồi khi database Cloud (TiDB) bị timeout ngắt socket, đảm bảo hệ thống luôn sẵn sàng 100%."*
+
+* **Thầy hỏi:** *"Hệ thống bóc tách và tính điểm xử lý như thế nào đối với các môn đang học và công thức tính điểm?"*
+* **Hiếu trả lời:**
+  > *"Thưa thầy, cấu trúc bảng điểm DUT gồm 19 cột với 7 cột điểm thành phần (BT, BV, CK, DA, GK, QT, TH) và chuỗi công thức tỷ lệ điểm.  
+  > Đối với môn đang học chưa có điểm cuối kỳ, thuật toán của em vẫn nhận diện và lưu lại các điểm thành phần đã có, đồng thời loại trừ môn này khỏi mẫu số tín chỉ tích lũy để không làm sai lệch CPA.  
+  > Ngoài ra, hệ thống tích hợp bộ máy phân tích công thức `formula`: khi sinh viên nhập điểm thành phần hoặc thử nghiệm các mức điểm cuối kỳ dự kiến, hệ thống tự động tính ra điểm 10, quy đổi sang thang 4 và điểm chữ theo chuẩn quy chế tín chỉ của trường."*
 
 * **Thầy hỏi:** *"Chế độ cân bằng tải hoạt động ra sao?"*
 * **Hiếu trả lời:**

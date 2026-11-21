@@ -1,6 +1,5 @@
 CREATE TABLE courses (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    course_code VARCHAR(50) UNIQUE NOT NULL,
-    course_name VARCHAR(150) NOT NULL,
-    credits INT NOT NULL DEFAULT 0
+    course_name VARCHAR(150) UNIQUE NOT NULL,
+    credits DOUBLE NOT NULL DEFAULT 0
 );

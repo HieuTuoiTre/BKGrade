@@ -2,48 +2,44 @@ package com.gradecalc.model.Bean;
 
 public class Course {
     private int id;
-    private String courseCode;
     private String courseName;
-    private int credits;
+    private double credits;
 
-    public Course(){
-
+    public Course() {
     }
-    public Course(String courseCode, String courseName, int credits){
-        this.courseCode = courseCode;
+
+    public Course(String courseName, double credits) {
         this.courseName = courseName;
         this.credits = credits;
     }
-    public Course(int id, String courseCode, String courseName, int credits) {
+
+    public Course(int id, String courseName, double credits) {
         this.id = id;
-        this.courseCode = courseCode;
         this.courseName = courseName;
         this.credits = credits;
     }
+
     public int getId() {
         return id;
     }
+
     public void setId(int id) {
         this.id = id;
     }
-    public String getCourseCode() {
-        return courseCode;
-    }
-    public void setCourseCode(String courseCode) {
-        this.courseCode = courseCode;
-    }
+
     public String getCourseName() {
         return courseName;
     }
+
     public void setCourseName(String courseName) {
         this.courseName = courseName;
     }
-    public int getCredits() {
+
+    public double getCredits() {
         return credits;
     }
-    public void setCredits(int credits) {
+
+    public void setCredits(double credits) {
         this.credits = credits;
     }
-
-    
 }

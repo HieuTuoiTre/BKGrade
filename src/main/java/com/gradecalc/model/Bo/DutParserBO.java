@@ -9,109 +9,136 @@ import java.util.Set;
 import com.gradecalc.model.Bean.Grade;
 
 public class DutParserBO {
-    // Các điểm chữ hợp lệ
-    private static final Set<String> VALID_GRADES = new HashSet<>(Arrays.asList("A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"));
+    private static final Set<String> VALID_GRADES = new HashSet<>(
+            Arrays.asList("A+", "A", "B+", "B", "C+", "C", "D+", "D", "F")
+    );
 
     public List<Grade> parse(String rawText) {
         List<Grade> gradeList = new ArrayList<>();
-        if(rawText == null || rawText.trim().isEmpty()){
-            return  gradeList;
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return gradeList;
         }
 
-        // 1. Tách thành từng dòng
         String[] lines = rawText.split("\\r?\\n");
 
-        for(String line : lines){
-            // Bỏ qua dòng trống
-            if(line.trim().isEmpty()) continue;
+        for (String line : lines) {
+            if (line.trim().isEmpty()) continue;
 
-            // 2. Tách từng dòng thành mảng cột theo thứ tự Tab
+            // Bỏ qua dòng tiêu đề bảng nếu có copy trúng
+            if (line.contains("Mã lớp học phần") || line.contains("Tên lớp học phần") || line.contains("Công thức điểm")) {
+                continue;
+            }
+
             String[] cols = line.split("\\t", -1);
+            if (cols.length < 6) continue;
 
-            // Bỏ qua dòng có ít hơn 10 cột (Không phải dòng môn học hợp lệ)
-            if(cols.length < 10) continue;
-
-            try{
-                // 3. Đọc các cột cố định
+            try {
+                // Các cột: TT(0), Kỳ(1), Kỳ phụ(2), Mã HP(3), Tên HP(4), Số TC(5), Công thức(6)
                 String semester = cols[1].trim();
-                String courseCode = cols[3].trim();
                 String courseName = cols[4].trim();
-                int credits = Integer.parseInt(cols[5].trim());
-                String formula = cols[6].trim();
 
-                // 4. Thuật toán tìm điểm chữ, điểm 4, điểm 10.
-                String scoreLetter = "";
-                double score4 = 0.0;
-                double score10 = 0.0;
+                if (courseName.isEmpty()) {
+                    continue;
+                }
 
-                for(int i = cols.length - 1; i >= 7; i--){
-                    String cell = cols[i].trim();
-                    if(VALID_GRADES.contains(cell)){
-                        scoreLetter = cell; // Lấy điểm chữ
-                        // Lùi 1 bước lấy điểm hệ 4
-                        score4 = parseDouble(cols[i - 1]);
-                        // Lùi 2 bước để lấy điểm hệ 10
-                        score10 = parseDouble(cols[i - 2]);
+                double credits = Double.parseDouble(cols[5].trim());
+                String formula = cols.length > 6 ? cols[6].trim() : "";
 
-                        break;
+                // 7 cột điểm thành phần chuẩn DUT (cột 7..13)
+                Double scoreBt = getDoubleCol(cols, 7);
+                Double scoreBv = getDoubleCol(cols, 8);
+                Double scoreCk = getDoubleCol(cols, 9);
+                Double scoreDa = getDoubleCol(cols, 10);
+                Double scoreGk = getDoubleCol(cols, 11);
+                Double scoreQt = getDoubleCol(cols, 12);
+                Double scoreTh = getDoubleCol(cols, 13);
+
+                // Các cột điểm tổng kết (cột 14: điểm 10, cột 15: điểm 4, cột 16: điểm chữ)
+                Double score10 = getDoubleCol(cols, 14);
+                Double score4 = getDoubleCol(cols, 15);
+                String scoreLetter = getStringCol(cols, 16);
+
+                // Kiểm tra điểm chữ hợp lệ
+                if (scoreLetter != null && VALID_GRADES.contains(scoreLetter.toUpperCase())) {
+                    scoreLetter = scoreLetter.toUpperCase();
+                } else {
+                    // Nếu cột 16 không phải điểm chữ, quét ngược từ cuối dòng để tìm xem có cột điểm chữ không
+                    boolean found = false;
+                    for (int i = cols.length - 1; i >= 7; i--) {
+                        String cell = cols[i].trim().toUpperCase();
+                        if (VALID_GRADES.contains(cell)) {
+                            scoreLetter = cell;
+                            score4 = getDoubleCol(cols, i - 1);
+                            score10 = getDoubleCol(cols, i - 2);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        // Nếu là môn 0 tín chỉ (GDTC/GDQP/Môn điều kiện) đã học xong nhưng không có điểm chữ -> Ghi nhận "Đạt"
+                        if (credits == 0) {
+                            scoreLetter = "Đạt";
+                        } else {
+                            // Môn học chuyên ngành đang học (chưa có điểm chữ / điểm tổng kết)
+                            scoreLetter = null;
+                            score4 = null;
+                            score10 = null;
+                        }
                     }
                 }
-                //Bỏ qua dòng không tìm được điểm chữ hợp lệ
-                if(scoreLetter.isEmpty()) continue;
 
-                // 5. Đóng gói vào Grade
+                // Nếu chưa có điểm 10 nhưng đã có công thức và điểm thành phần -> Tự tính bằng Engine
+                if (score10 == null && !formula.isEmpty()) {
+                    Double calculated = GradeCalculatorBO.evaluateFormula(formula, scoreBt, scoreBv, scoreCk, scoreDa, scoreGk, scoreQt, scoreTh);
+                    if (calculated != null) {
+                        score10 = calculated;
+                        score4 = GradeCalculatorBO.convertScore10ToScore4(calculated);
+                        scoreLetter = GradeCalculatorBO.convertScore10ToLetter(calculated);
+                    }
+                }
+
                 Grade grade = new Grade();
                 grade.setSemester(semester);
-                grade.setCourseCode(courseCode);
                 grade.setCourseName(courseName);
                 grade.setCredits(credits);
                 grade.setFormula(formula);
+
+                grade.setScoreBt(scoreBt);
+                grade.setScoreBv(scoreBv);
+                grade.setScoreCk(scoreCk);
+                grade.setScoreDa(scoreDa);
+                grade.setScoreGk(scoreGk);
+                grade.setScoreQt(scoreQt);
+                grade.setScoreTh(scoreTh);
+
                 grade.setScore10(score10);
                 grade.setScore4(score4);
                 grade.setScoreLetter(scoreLetter);
 
                 gradeList.add(grade);
 
-            }catch (NumberFormatException | ArrayIndexOutOfBoundsException e){
-                // Bỏ qua dòng lỗi, tiếp tục dòng tiếp theo
+            } catch (Exception e) {
+                // Bỏ qua dòng lỗi định dạng và tiếp tục dòng tiếp theo
                 continue;
             }
         }
         return gradeList;
     }
 
-    // Hàm phụ : parse sang Double, trả về 0.0 nếu lỗi hoặc trống
-    private double parseDouble(String s){
-        try{
-            return Double.parseDouble(s.trim());
-        }catch (NumberFormatException e){
-            return 0.0;
+    private Double getDoubleCol(String[] cols, int index) {
+        if (index >= cols.length) return null;
+        String val = cols[index].trim();
+        if (val.isEmpty()) return null;
+        try {
+            return Double.parseDouble(val);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
-    public static void main(String[] args) {
-        String testData = "38\t2/2025-2026\t\t2090170.2521.yy.92\tLịch sử Đảng Cộng sản Việt Nam\t2\t[GK]*0.20+[BT]*0.20+[CK]*0.60\t10.0\t\t8.0\t\t9.5\t\t\t8.7\t4.0\tA\t\t\r\n" +
-                        "37\t2/2025-2026\t\t1020252.2520.24.12\tCông nghệ phần mềm\t2\t[GK]*0.20+[BT]*0.20+[CK]*0.60\t8.5\t\t9.1\t\t9.2\t\t\t9.0\t4.0\tA\t\t";
 
-        DutParserBO parser = new DutParserBO();
-        List<Grade> result = parser.parse(testData);
-
-        System.out.println("====== KET QUA BOC TACH BANG DIEM DUT ======");
-        System.out.println("Tổng số môn bóc tách được: " + result.size());
-        System.out.println("--------------------------------------------------------------------------------------------------");
-        System.out.printf("%-12s | %-18s | %-30s | %-4s | %-6s | %-6s | %-4s%n",
-                "Học kỳ", "Mã môn", "Tên môn học", "TC", "Điểm10", "Điểm4", "Chữ");
-        System.out.println("--------------------------------------------------------------------------------------------------");
-
-        for (Grade g : result) {
-            System.out.printf("%-12s | %-18s | %-30s | %-4d | %-6.1f | %-6.1f | %-4s%n",
-                    g.getSemester(),
-                    g.getCourseCode(),
-                    g.getCourseName(),
-                    g.getCredits(),
-                    g.getScore10(),
-                    g.getScore4(),
-                    g.getScoreLetter());
-        }
-        System.out.println("--------------------------------------------------------------------------------------------------");
+    private String getStringCol(String[] cols, int index) {
+        if (index >= cols.length) return null;
+        String val = cols[index].trim();
+        return val.isEmpty() ? null : val;
     }
 }
