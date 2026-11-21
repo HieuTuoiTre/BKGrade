@@ -16,7 +16,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fa-solid fa-graduation-cap me-2"></i>DUT Grade Calc
+                <i class="fa-solid fa-graduation-cap me-2"></i> BKGrade Calc
             </a>
             <div class="ms-auto">
                 <a href="login" class="btn btn-outline-light me-2">Đăng nhập</a>
@@ -28,10 +28,9 @@
     <!-- 2. HERO BANNER -->
     <header class="py-5 bg-white text-center border-bottom">
         <div class="container">
-            <h1 class="display-5 fw-bold text-primary mb-3">Tính Điểm Học Tập DUT Tự Động</h1>
+            <h1 class="display-5 fw-bold text-primary mb-3">Tính Điểm Học Tập BKGrade Calc</h1>
             <p class="lead text-muted mx-auto" style="max-width: 700px;">
-                Không cần nhập tay từng môn! Chỉ cần sao chép bảng điểm từ trang <code>sv.dut.udn.vn</code> 
-                và dán vào, hệ thống sẽ tự động bóc tách, tính GPA hệ 10, hệ 4 và xếp loại trong 3 giây.
+                Hệ thống hỗ trợ tính điểm học tập, tương thích tốt với sinh viên DUT. Thao tác đơn giản và nhanh chóng.
             </p>
             <div class="mt-4">
                 <a href="login" class="btn btn-primary btn-lg px-4 me-2 shadow">
@@ -48,7 +47,7 @@
     <section id="guide-video" class="py-5 bg-light">
         <div class="container text-center">
             <h2 class="fw-bold mb-3">Cách Sử Dụng Đơn Giản</h2>
-            <p class="text-muted mb-4">Xem video 30 giây dưới đây để biết cách copy bảng điểm từ trang sinh viên</p>
+            <p class="text-muted mb-4">Xem video 30 giây dưới đây để biết cách sử dụng</p>
             
             <div class="row justify-content-center">
                 <div class="col-lg-8">
@@ -61,7 +60,7 @@
                         </video>
 
                         <!-- Cách 2: Nếu bạn tải video lên YouTube thì dùng iframe:
-                        <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="Hướng dẫn" allowfullscreen></iframe>
+                        <iframe src="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" title="Hướng dẫn" allowfullscreen></iframe>
                         -->
                     </div>
                 </div>
@@ -81,8 +80,8 @@
                             <div class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
                                 <i class="fa-solid fa-code fa-2x"></i>
                             </div>
-                            <h5 class="card-title fw-bold">Nguyễn Văn Hiếu</h5>
-                            <p class="text-primary mb-2 fw-semibold">Track B - Algorithm & Infrastructure</p>
+                            <h5 class="card-title fw-bold">Nguyễn Hoàng Hiếu</h5>
+                            <p class="text-primary mb-2 fw-semibold">Track A - Algorithm & Infrastructure</p>
                             <p class="card-text text-muted small">
                                 Phụ trách: Thuật toán bóc tách dữ liệu DUT, Bộ nhớ đệm Connection Pool, Cân bằng tải Apache & Cloudflare.
                             </p>
@@ -97,8 +96,8 @@
                             <div class="bg-success text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 80px; height: 80px;">
                                 <i class="fa-solid fa-shield-halved fa-2x"></i>
                             </div>
-                            <h5 class="card-title fw-bold">... Nghĩa</h5>
-                            <p class="text-success mb-2 fw-semibold">Track A - Security & Authentication</p>
+                            <h5 class="card-title fw-bold">Huỳnh Hiếu Nghĩa</h5>
+                            <p class="text-success mb-2 fw-semibold">Track B - Security & Authentication</p>
                             <p class="card-text text-muted small">
                                 Phụ trách: Hệ thống tài khoản người dùng, Mã hóa mật khẩu BCrypt, Kiến trúc bảo mật đa tầng Filter.
                             </p>
@@ -108,7 +107,7 @@
             </div>
             
             <div class="text-center text-muted mt-4">
-                <small>Khoa Công nghệ Thông tin — Trường Đại học Bách Khoa, Đại học Đà Nẵng (DUT)</small>
+                <small>Khoa Công nghệ Thông tin — Trường Đại học Bách Khoa, Đại học Đà Nẵng</small>
             </div>
         </div>
     </section>
@@ -116,7 +115,7 @@
     <!-- 5. CHÂN TRANG (FOOTER) -->
     <footer class="py-4 bg-dark text-white text-center">
         <div class="container">
-            <p class="mb-0 small">© 2026 DUT Grade Calculator. Dự án môn học Công nghệ Web.</p>
+            <p class="mb-0 small">© 2026 BKGrade Calc. Dự án môn học Công nghệ Web.</p>
         </div>
     </footer>
 
