@@ -284,7 +284,22 @@
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                         title="Sửa điểm / Dự báo GPA"
-                                                        onclick="openEditModal(${g.id}, '${g.courseName}', '${g.semester}', ${g.credits}, '${g.formula}', '${g.scoreBt}', '${g.scoreBv}', '${g.scoreCk}', '${g.scoreDa}', '${g.scoreGk}', '${g.scoreQt}', '${g.scoreTh}', '${g.score10}', '${g.score4}', '${g.scoreLetter}')">
+                                                        data-id="${g.id}"
+                                                        data-name="${g.courseName}"
+                                                        data-sem="${g.semester}"
+                                                        data-credits="${g.credits}"
+                                                        data-formula="${g.formula}"
+                                                        data-bt="${g.scoreBt}"
+                                                        data-bv="${g.scoreBv}"
+                                                        data-ck="${g.scoreCk}"
+                                                        data-da="${g.scoreDa}"
+                                                        data-gk="${g.scoreGk}"
+                                                        data-qt="${g.scoreQt}"
+                                                        data-th="${g.scoreTh}"
+                                                        data-s10="${g.score10}"
+                                                        data-s4="${g.score4}"
+                                                        data-sletter="${g.scoreLetter}"
+                                                        onclick="openEditModalFromBtn(this)">
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
                                                 <form action="grades" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa môn này khỏi bảng điểm?');">
@@ -552,6 +567,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        function openEditModalFromBtn(btn) {
+            var d = btn.dataset;
+            openEditModal(d.id, d.name, d.sem, d.credits, d.formula, d.bt, d.bv, d.ck, d.da, d.gk, d.qt, d.th, d.s10, d.s4, d.sletter);
+        }
+
         function openEditModal(id, name, sem, credits, formula, bt, bv, ck, da, gk, qt, th, s10, s4, sLetter) {
             document.getElementById('editGradeId').value = id;
             document.getElementById('editCourseName').innerText = name;
