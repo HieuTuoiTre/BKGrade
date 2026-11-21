@@ -11,6 +11,19 @@
 
 ---
 
+### Tiến độ thực hiện (Checklist)
+* [x] **Bước 1:** Tự viết `CustomConnectionPool.java` (Singleton, BlockingQueue, chống timeout TiDB Cloud).
+* [x] **Bước 2:** Cấu hình CSDL (`schema.sql`, `courses.sql`, 7 cột điểm thành phần, loại bỏ `course_code`, khóa `UNIQUE` theo tên môn).
+* [x] **Bước 3:** Tầng Bean (`Course.java`, `Grade.java`, `SemesterSummary.java`).
+* [x] **Bước 4:** Tầng DAO (`CourseDAO.java`, `GradeDAO.java` - hỗ trợ điểm `null`, sắp xếp tăng dần theo học kỳ).
+* [x] **Bước 5:** Bóc tách dữ liệu DUT 19 cột (`DutParserBO.java` - xử lý môn đang học, nhận diện môn 0 TC GDTC đạt).
+* [x] **Bước 6:** Engine tính điểm công thức & CPA chuẩn DUT (`GradeCalculatorBO.java` - chuẩn 82 TC, 3.23 CPA).
+* [x] **Bước 7:** Giao diện & Điều hướng (`GradeController.java`, `dashboard.jsp` - hiển thị trọn vẹn 16 cột với `container-fluid`, bảng có cột Công thức, modal có gợi ý công thức mẫu, tự động đồng bộ điểm 10 ➔ thang 4 ➔ chữ).
+* [ ] **Bước 8:** Cấu hình Cân bằng tải (Load Balancing) với Apache XAMPP & 2 node Tomcat (8080 & 8081).
+* [ ] **Bước 9:** Deploy Public Internet qua Cloudflare Tunnel (`cloudflared`).
+
+---
+
 ### I. Danh sách các tệp tin bạn Hiếu phụ trách (Không đụng chạm với bạn Nghĩa)
 
 ```text
@@ -181,10 +194,11 @@ Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
 * **2. Trang Dashboard tính điểm (`dashboard.jsp`):**
   * **Khối tóm tắt (3 Cards):** Tổng tín chỉ tích lũy (ví dụ: `82 TC`), Điểm trung bình GPA/CPA (`3.23 / 4.0`), Xếp loại học lực (`Giỏi`).
   * **Khối nhập liệu bảng điểm:** Vùng `<textarea>` dán bảng điểm DUT.
-  * **Nút bấm & Modal "Thêm môn học thủ công":** Nhập Học kỳ, Mã học phần, Tên môn học, Số TC (hỗ trợ nhập số lẻ như `2.5`), Công thức tính điểm, và các điểm thành phần.
+  * **Nút bấm & Modal "Thêm môn học thủ công":** Nhập Học kỳ, Tên môn học, Số TC (hỗ trợ nhập số lẻ như `2.5`), Công thức tính điểm (có sẵn preset bấm chọn nhanh), và các điểm thành phần. (Đã loại bỏ hoàn toàn Mã học phần thừa).
   * **Bảng chi tiết điểm học phần:**
-    * Cột hiển thị: STT, Học kỳ, Mã HP, Tên môn, Số TC, **Các điểm thành phần (`BT`, `BV`, `CK`, `DA`, `GK`, `QT`, `TH`)**, Điểm 10, Điểm 4, Điểm chữ, Thao tác.
-    * *(Lưu ý UX: Cột Công thức được ẩn khỏi bảng hiển thị chính để bảng điểm thoáng đãng, công thức được giữ ngầm để tự động tính điểm 10 khi người dùng nhập điểm thành phần).*
+    * Cột hiển thị: STT, Học kỳ, Tên môn, Số TC, **Công thức**, **Các điểm thành phần (`BT`, `BV`, `CK`, `DA`, `GK`, `QT`, `TH`)**, Thang 10, Thang 4, Điểm chữ, Thao tác.
+    * **Bố cục toàn màn hình:** Sử dụng `container-fluid px-lg-4 px-3` với độ rộng các cột tối ưu (`.col-comp { width: 42px; }`) giúp bảng 16 cột hiển thị trọn vẹn, không bị mất cột Thao tác bên phải.
+    * **Đảm bảo toàn vẹn dữ liệu:** Thang 4 và Điểm chữ được đặt `readonly`, tự động tính toán đồng bộ theo Thang 10 (Cách 1) nhằm loại trừ rủi ro xung đột dữ liệu.
     * **Thứ tự sắp xếp:** Sắp xếp theo tiến trình thời gian học (môn học trước lên trước, từ học kỳ năm nhất đến học kỳ mới nhất).
     * Với môn đã có kết quả: Hiển thị badge điểm chữ màu sắc theo chuẩn (A, B+, B, C+, C, D+, D, F).
     * Với môn 0 TC (GDTC/GDQP): Tự động nhận diện và gắn nhãn **Đạt** (`badge bg-success`) thay vì nhận nhầm là đang học.
@@ -242,51 +256,6 @@ Cập nhật 2 bảng trong MySQL/TiDB (`database/schema.sql`):
   > *"Thưa thầy, cấu trúc bảng điểm DUT gồm 19 cột với 7 cột điểm thành phần (BT, BV, CK, DA, GK, QT, TH) và chuỗi công thức tỷ lệ điểm.  
   > Đối với môn đang học chưa có điểm cuối kỳ, thuật toán của em vẫn nhận diện và lưu lại các điểm thành phần đã có, đồng thời loại trừ môn này khỏi mẫu số tín chỉ tích lũy để không làm sai lệch CPA.  
   > Ngoài ra, hệ thống tích hợp bộ máy phân tích công thức `formula`: khi sinh viên nhập điểm thành phần hoặc thử nghiệm các mức điểm cuối kỳ dự kiến, hệ thống tự động tính ra điểm 10, quy đổi sang thang 4 và điểm chữ theo chuẩn quy chế tín chỉ của trường."*
-
----
-
-### III. Nhiệm vụ Kỹ thuật trọng tâm của Hiếu: CÂN BẰNG TẢI & DEPLOY (Thầy chấm điểm)
-
-Đây là phần Hiếu sẽ trực tiếp mở máy demo và bảo vệ trước giảng viên:
-
-#### 1. Cấu hình Cân bằng tải trên Apache XAMPP:
-* Tạo 2 bản sao của Tomcat:
-  * Node 1: Thư mục `tomcat-node-1` (chạy cổng `8080`).
-  * Node 2: Thư mục `tomcat-node-2` (chạy cổng `8081`).
-* Mở file cấu hình Apache của XAMPP (`C:\xampp\apache\conf\httpd.conf`), bật module:
-  ```apache
-  LoadModule proxy_module modules/mod_proxy.so
-  LoadModule proxy_balancer_module modules/mod_proxy_balancer.so
-  LoadModule proxy_http_module modules/mod_proxy_http.so
-  LoadModule lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
-  ```
-* Khai báo cụm cân bằng tải:
-  ```apache
-  <Proxy "balancer://gradecalc_cluster">
-      BalancerMember "http://localhost:8080/grade-calculator"
-      BalancerMember "http://localhost:8081/grade-calculator"
-      ProxySet lbmethod=byrequests
-  </Proxy>
-  ProxyPass "/grade-calculator" "balancer://gradecalc_cluster"
-  ProxyPassReverse "/grade-calculator" "balancer://gradecalc_cluster"
-  ```
-* Bật trang quản trị `/balancer-manager` của Apache để khi báo cáo, mở trang này lên cho thầy thấy số lượng request được chia đều 50/50 giữa 2 server.
-
-#### 2. Deploy đưa website lên mạng (Public Internet):
-* Dùng công cụ **Cloudflare Tunnel** (miễn phí):
-  ```powershell
-  cloudflared tunnel --url http://localhost:80
-  ```
-* Hệ thống sẽ sinh ra một đường link HTTPS trực tiếp (ví dụ: `https://grade-dut-calculator.trycloudflare.com`). Giảng viên và các bạn trong lớp có thể cầm điện thoại truy cập vào dùng thử ngay lập tức.
-
----
-
-### IV. Câu hỏi vấn đáp mẫu giúp Hiếu đạt điểm tối đa
-
-* **Thầy hỏi:** *"Em viết Connection Pool như thế nào và tại sao cần nó?"*
-* **Hiếu trả lời:**
-  > *"Thưa thầy, thông thường mỗi request tạo một kết nối mới tới MySQL sẽ tốn rất nhiều thời gian bắt tay TCP và dễ làm sập DB khi có nhiều người truy cập.  
-  > Em đã tự xây dựng lớp CustomConnectionPool theo mô hình Singleton, sử dụng BlockingQueue để giữ sẵn một bể từ 5 đến 15 kết nối mở sẵn. Khi DAO cần truy vấn, nó mượn kết nối từ bể, thực hiện xong câu lệnh thì trả kết nối về bể chứ không đóng lại. Nhờ đó giảm tải 90% chi phí khởi tạo kết nối."*
 
 * **Thầy hỏi:** *"Chế độ cân bằng tải hoạt động ra sao?"*
 * **Hiếu trả lời:**
