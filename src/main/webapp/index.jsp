@@ -15,12 +15,12 @@
     <!-- 1. THANH MENU (NAVBAR) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
+            <a class="navbar-brand fw-bold" href="${pageContext.request.contextPath}/">
                 <i class="fa-solid fa-graduation-cap me-2"></i> BKGrade Calc
             </a>
             <div class="ms-auto">
-                <a href="login" class="btn btn-outline-light me-2">Đăng nhập</a>
-                <a href="register" class="btn btn-warning fw-bold">Đăng ký</a>
+                <a href="${pageContext.request.contextPath}/login" class="btn btn-outline-light me-2">Đăng nhập</a>
+                <a href="${pageContext.request.contextPath}/register" class="btn btn-warning fw-bold">Đăng ký</a>
             </div>
         </div>
     </nav>
@@ -55,7 +55,7 @@
                     <div class="ratio ratio-16x9 shadow-lg rounded-4 overflow-hidden border">
                         <!-- Cách 1: Video mp4 đặt trong thư mục assets/videos/ -->
                         <video controls poster="https://placehold.co/800x450?text=Bam+de+xem+huong+dan">
-                            <source src="assets/videos/huong-dan-copy-dut.mp4" type="video/mp4">
+                            <source src="${pageContext.request.contextPath}/assets/videos/huong-dan-copy-dut.mp4" type="video/mp4">
                             Trình duyệt của bạn không hỗ trợ thẻ video.
                         </video>
 
