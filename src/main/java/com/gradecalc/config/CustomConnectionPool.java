@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;;
 public class CustomConnectionPool {
     private static final int INITIAL_POOL_SIZE = 5;
     private static final int MAX_POOL_SIZE = 15;
-    private static final String URL = "jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/BKGRADE?useSSL=true&characterEncoding=UTF-8&autoReconnect=true";
+    private static final String URL = "jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/BKGRADE?useSSL=true&characterEncoding=UTF-8&autoReconnect=true&rewriteBatchedStatements=true";
     private static final String USER = "SAvcDRiDPd4oMBk.root";
     private static final String PASSWORD = "LVuh2Bm7d9QBqlaa";
     private BlockingQueue<Connection> connectionPool; //hàng đợi chứa connection
@@ -53,7 +53,7 @@ public class CustomConnectionPool {
         // 👉 KIỂM TRA: Bọc try-catch để nếu TiDB ngắt socket thì không văng lỗi "No operations allowed after connection closed"
         boolean isValid = false;
         try {
-            if (conn != null && !conn.isClosed() && conn.isValid(2)) {
+            if (conn != null && !conn.isClosed() && conn.isValid(1)) {
                 isValid = true;
             }
         } catch (Exception ignored) {
@@ -73,30 +73,25 @@ public class CustomConnectionPool {
     // Không cần synchronized vì chỉ có 1 luồng được phép gọi releaseConnection() tại 1 thời điểm
     // Không được gọi conn.close() ở đây vì sẽ đóng connection, không thể tái sử dụng
     public void releaseConnection(Connection conn){
-        if(conn != null){
-            boolean isValid = false;
+        if (conn != null) {
             try {
-                if (!conn.isClosed() && conn.isValid(2)) {
-                    isValid = true;
+                if (!conn.isClosed()) {
+                    connectionPool.offer(conn);
+                    return;
                 }
-            } catch (Exception ignored) {
-                isValid = false;
-            }
+            } catch (Exception ignored) {}
 
-            if (isValid) {
-                connectionPool.offer(conn);
-            } else {
-                try {
-                    conn.close();
-                } catch (Exception ignored) {}
-                try {
-                    connectionPool.offer(createConnection());
-                } catch (SQLException e) {
-                    System.err.println("Lỗi tạo kết nối bù vào pool: " + e.getMessage());
-                }
+            try {
+                conn.close();
+            } catch (Exception ignored) {}
+            try {
+                connectionPool.offer(createConnection());
+            } catch (SQLException e) {
+                System.err.println("Lỗi tạo kết nối bù vào pool: " + e.getMessage());
             }
         }
     }
+
     public static void main(String[] args) throws Exception{
         CustomConnectionPool pool = CustomConnectionPool.getInstance();
         // mượn 3 connection từ pool

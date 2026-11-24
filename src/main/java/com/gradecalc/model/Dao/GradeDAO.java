@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.gradecalc.config.CustomConnectionPool;
 import com.gradecalc.model.Bean.Course;
@@ -28,6 +29,27 @@ public class GradeDAO {
     }
 
     public void saveGradeList(int userId, List<Grade> gradeList) throws SQLException, InterruptedException {
+        if (gradeList == null || gradeList.isEmpty()) return;
+
+        CourseDAO courseDAO = new CourseDAO();
+        // 🚀 TỐI ƯU 1: Nạp toàn bộ danh mục môn học hiện có vào RAM chỉ với 1 truy vấn duy nhất
+        Map<String, Course> courseMap = courseDAO.findAllAsMap();
+
+        for (Grade grade : gradeList) {
+            String courseName = grade.getCourseName();
+            Course course = courseMap.get(courseName);
+            if (course == null) {
+                course = new Course(courseName, grade.getCredits());
+                courseDAO.save(course);
+                courseMap.put(courseName, course);
+            } else if (course.getCredits() != grade.getCredits()) {
+                course.setCredits(grade.getCredits());
+                courseDAO.save(course);
+                courseMap.put(courseName, course);
+            }
+            grade.setCourseId(course.getId());
+        }
+
         Connection conn = null;
         try {
             conn = CustomConnectionPool.getInstance().getConnection();
@@ -42,21 +64,8 @@ public class GradeDAO {
                          "score_10=VALUES(score_10), score_4=VALUES(score_4), score_letter=VALUES(score_letter)";
 
             PreparedStatement ps = conn.prepareStatement(sql);
-            CourseDAO courseDAO = new CourseDAO();
 
             for (Grade grade : gradeList) {
-                // 1. Tìm hoặc tạo mới môn học theo tên môn
-                Course course = courseDAO.findByName(grade.getCourseName());
-                if (course == null) {
-                    course = new Course(grade.getCourseName(), grade.getCredits());
-                    courseDAO.save(course);
-                } else if (course.getCredits() != grade.getCredits()) {
-                    course.setCredits(grade.getCredits());
-                    courseDAO.save(course);
-                }
-                grade.setCourseId(course.getId());
-
-                // 2. Điền tham số
                 ps.setInt(1, userId);
                 ps.setInt(2, grade.getCourseId());
                 ps.setString(3, grade.getSemester());
@@ -172,6 +181,29 @@ public class GradeDAO {
             ps.setString(3, scoreLetter);
             ps.setInt(4, gradeId);
             ps.executeUpdate();
+        } finally {
+            CustomConnectionPool.getInstance().releaseConnection(conn);
+        }
+    }
+
+    /**
+     * 🚀 TỐI ƯU 2: Cập nhật hàng loạt điểm mô phỏng chỉ trong 1 gói tin batch (thay vì lặp N câu update)
+     */
+    public void updateGradeScoresBatch(List<Integer> gradeIds, List<Double> scores10, List<Double> scores4, List<String> letters) throws SQLException, InterruptedException {
+        if (gradeIds == null || gradeIds.isEmpty()) return;
+        Connection conn = null;
+        try {
+            conn = CustomConnectionPool.getInstance().getConnection();
+            String sql = "UPDATE grades SET score_10=?, score_4=?, score_letter=? WHERE id=?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            for (int i = 0; i < gradeIds.size(); i++) {
+                setDoubleOrNull(ps, 1, scores10.get(i));
+                setDoubleOrNull(ps, 2, scores4.get(i));
+                ps.setString(3, letters.get(i));
+                ps.setInt(4, gradeIds.get(i));
+                ps.addBatch();
+            }
+            ps.executeBatch();
         } finally {
             CustomConnectionPool.getInstance().releaseConnection(conn);
         }

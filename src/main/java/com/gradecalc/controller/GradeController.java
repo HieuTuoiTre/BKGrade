@@ -1,6 +1,7 @@
 package com.gradecalc.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -198,7 +199,11 @@ public class GradeController extends HttpServlet {
                 String[] simLetters = request.getParameterValues("simLetters");
 
                 if (gradeIds != null && simLetters != null && gradeIds.length == simLetters.length) {
-                    int updatedCount = 0;
+                    List<Integer> idList = new ArrayList<>();
+                    List<Double> s10List = new ArrayList<>();
+                    List<Double> s4List = new ArrayList<>();
+                    List<String> letterList = new ArrayList<>();
+
                     for (int i = 0; i < gradeIds.length; i++) {
                         try {
                             int gid = Integer.parseInt(gradeIds[i]);
@@ -206,13 +211,19 @@ public class GradeController extends HttpServlet {
                             if (letter != null && !letter.trim().isEmpty()) {
                                 Double s4 = GradeCalculatorBO.convertLetterToScore4(letter);
                                 Double minS10 = GradeCalculatorBO.convertLetterToMinScore10(letter);
-                                gradeDAO.updateGradeScores(gid, minS10, s4, letter);
-                                updatedCount++;
+                                idList.add(gid);
+                                s10List.add(minS10);
+                                s4List.add(s4);
+                                letterList.add(letter);
                             }
                         } catch (NumberFormatException ignored) {
                         }
                     }
-                    request.setAttribute("successMessage", "Đã lưu thành công " + updatedCount + " điểm môn học dự kiến vào bảng điểm!");
+
+                    if (!idList.isEmpty()) {
+                        gradeDAO.updateGradeScoresBatch(idList, s10List, s4List, letterList);
+                    }
+                    request.setAttribute("successMessage", "Đã lưu thành công " + idList.size() + " điểm môn học dự kiến vào bảng điểm!");
                 } else {
                     request.setAttribute("errorMessage", "Không có môn học mô phỏng nào để lưu!");
                 }
