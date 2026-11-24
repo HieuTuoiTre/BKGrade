@@ -94,6 +94,42 @@ public class GradeCalculatorBO {
     }
 
     /**
+     * Quy đổi điểm chữ sang điểm hệ 4 theo chuẩn DUT.
+     */
+    public static Double convertLetterToScore4(String letter) {
+        if (letter == null) return null;
+        switch (letter.trim().toUpperCase()) {
+            case "A": case "A+": return 4.0;
+            case "B+": return 3.5;
+            case "B": return 3.0;
+            case "C+": return 2.5;
+            case "C": return 2.0;
+            case "D+": return 1.5;
+            case "D": return 1.0;
+            case "F": return 0.0;
+            default: return null;
+        }
+    }
+
+    /**
+     * Quy đổi điểm chữ sang điểm tối thiểu hệ 10 theo chuẩn DUT.
+     */
+    public static Double convertLetterToMinScore10(String letter) {
+        if (letter == null) return null;
+        switch (letter.trim().toUpperCase()) {
+            case "A": case "A+": return 8.5;
+            case "B+": return 8.0;
+            case "B": return 7.0;
+            case "C+": return 6.5;
+            case "C": return 5.5;
+            case "D+": return 5.0;
+            case "D": return 4.0;
+            case "F": return 0.0;
+            default: return null;
+        }
+    }
+
+    /**
      * Tính tổng kết toàn khóa (CPA).
      * Bỏ qua các môn 0 tín chỉ (GDTC/GDQP) và các môn chưa có điểm hệ 4 (đang học).
      */

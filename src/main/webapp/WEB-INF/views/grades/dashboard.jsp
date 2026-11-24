@@ -105,13 +105,31 @@
             </div>
         </div>
 
-        <!-- 4. KHỐI NHẬP LIỆU (DÁN BẢNG ĐIỂM) -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="fw-bold mb-0 text-primary">
-                    <i class="fa-solid fa-paste me-2"></i>Bóc tách bảng điểm từ DUT
-                </h5>
-            </div>
+        <!-- 4. THANH ĐIỀU HƯỚNG TABS (NAV-PILLS) -->
+        <ul class="nav nav-pills mb-4 nav-justified bg-white p-2 rounded shadow-sm border" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold py-2" id="grades-tab" data-bs-toggle="pill" data-bs-target="#gradesTabPane" type="button" role="tab" aria-controls="gradesTabPane" aria-selected="true">
+                    <i class="fa-solid fa-table-list me-2"></i>Bảng điểm chính thức
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold py-2" id="simulator-tab" data-bs-toggle="pill" data-bs-target="#simulatorTabPane" type="button" role="tab" aria-controls="simulatorTabPane" aria-selected="false">
+                    <i class="fa-solid fa-bullseye me-2"></i>Dự đoán & Mô phỏng mục tiêu GPA <span class="badge bg-danger ms-1">Mới</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="dashboardTabsContent">
+            <!-- TAB 1: BẢNG ĐIỂM CHÍNH THỨC -->
+            <div class="tab-pane fade show active" id="gradesTabPane" role="tabpanel" aria-labelledby="grades-tab">
+
+                <!-- KHỐI NHẬP LIỆU (DÁN BẢNG ĐIỂM) -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0 text-primary">
+                            <i class="fa-solid fa-paste me-2"></i>Bóc tách bảng điểm từ DUT
+                        </h5>
+                    </div>
             <div class="card-body">
                 <form action="grades" method="post">
                     <input type="hidden" name="action" value="import">
@@ -288,6 +306,123 @@
                 </div>
             </div>
         </div>
+            </div> <!-- KẾT THÚC TAB 1: BẢNG ĐIỂM CHÍNH THỨC -->
+
+            <!-- TAB 2: DỰ ĐOÁN & MÔ PHỎNG GPA (SANDBOX) -->
+            <div class="tab-pane fade" id="simulatorTabPane" role="tabpanel" aria-labelledby="simulator-tab">
+                <!-- KHỐI ĐIỀU KHIỂN MỤC TIÊU GPA -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="fw-bold mb-0 text-primary">
+                                <i class="fa-solid fa-bullseye me-2"></i>Mô phỏng mục tiêu GPA (What-If Sandbox)
+                            </h5>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fw-semibold">
+                                <i class="fa-solid fa-shield-halved me-1"></i>Chế độ thử nghiệm an toàn (Không ảnh hưởng CSDL thật)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4 align-items-center">
+                            <!-- Cột 1: CPA hiện tại & Mục tiêu -->
+                            <div class="col-lg-5">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="row align-items-center g-2 mb-3">
+                                        <div class="col-6">
+                                            <span class="small text-muted fw-semibold text-uppercase d-block">CPA hiện tại</span>
+                                            <span class="fs-4 fw-bold text-secondary">
+                                                ${not empty totalSummary ? totalSummary.gpa4 : 0.0}
+                                            </span>
+                                            <small class="text-muted">/ 4.0</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="simTargetGpaInput" class="small text-muted fw-semibold text-uppercase d-block">Mục tiêu CPA</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" step="0.05" min="1.0" max="4.0" class="form-control fw-bold text-center border-primary" 
+                                                       id="simTargetGpaInput" value="3.20" onchange="window.recalculateGpaSim()">
+                                                <span class="input-group-text bg-white">/ 4.0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Nút gợi ý kịch bản -->
+                                    <button type="button" class="btn btn-primary w-100 fw-semibold shadow-sm" onclick="window.suggestOptimalScenarios()">
+                                        <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Gợi ý kịch bản tối ưu để đạt mục tiêu
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Cột 2: CPA dự kiến theo thời gian thực (Live KPI) -->
+                            <div class="col-lg-7">
+                                <div class="p-3 bg-white rounded-3 border shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-bold text-uppercase text-muted">
+                                            <i class="fa-solid fa-chart-line text-success me-1"></i>CPA dự phóng thời gian thực
+                                        </span>
+                                        <span id="simTargetBadge" class="badge bg-secondary p-2">Đang tính toán...</span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline mb-2 flex-wrap">
+                                        <h2 class="display-6 fw-bold text-primary mb-0 me-2" id="simLiveCpa">--</h2>
+                                        <span class="text-muted fs-5 me-3">/ 4.0</span>
+                                        <span id="simCpaDiff" class="badge bg-secondary me-3">Giữ nguyên</span>
+                                        <span class="small text-muted ms-auto">Tổng tín chỉ: <strong id="simTotalCredits" class="text-dark">-- TC</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div id="simProgressBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khu vực hiển thị kịch bản gợi ý -->
+                        <div id="simScenarioResults"></div>
+                    </div>
+                </div>
+
+                <!-- KHỐI DANH SÁCH MÔN HỌC MÔ PHỎNG -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center">
+                            <h5 class="fw-bold mb-0 text-dark me-2">
+                                <i class="fa-solid fa-sliders me-2 text-primary"></i>Các môn học đang học & dự kiến
+                            </h5>
+                            <span class="badge bg-primary" id="simCourseCountBadge">0 môn</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="window.resetSimulation()">
+                                <i class="fa-solid fa-rotate-left me-1"></i>Đặt lại
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm fw-semibold shadow-sm" onclick="window.saveSimulationToDb()">
+                                <i class="fa-solid fa-floppy-disk me-1"></i>Lưu điểm dự kiến vào CSDL
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 50px;">STT</th>
+                                        <th>Môn học & Học kỳ</th>
+                                        <th class="text-center" style="width: 100px;">Số TC</th>
+                                        <th class="text-center" style="width: 160px;">Điểm chữ giả định</th>
+                                        <th class="text-center" style="width: 100px;">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="simCoursesTableBody">
+                                    <!-- JS sẽ render các môn học ở đây -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light py-2">
+                        <small class="text-muted">
+                            <i class="fa-solid fa-circle-info me-1"></i>Chọn điểm chữ ở cột <strong>"Điểm chữ giả định"</strong> để xem CPA dự phóng nhảy số tức thì. Bấm <strong>"Lưu điểm dự kiến vào CSDL"</strong> khi bạn muốn áp dụng kết quả này vào bảng điểm.
+                        </small>
+                    </div>
+                </div>
+            </div> <!-- KẾT THÚC TAB 2: DỰ ĐOÁN & MÔ PHỎNG GPA -->
+        </div> <!-- KẾT THÚC tab-content -->
 
     </main>
 
@@ -370,6 +505,9 @@
                                 <input type="number" step="0.1" min="0" max="10" class="form-control text-center" id="editScoreTh" name="scoreTh" oninput="calculateSimulator('edit')">
                             </div>
                         </div>
+
+                        <!-- Khối dự đoán điểm CK cần đạt (Course Target Prediction) -->
+                        <div id="editQuickPredictionBox" class="mb-3"></div>
 
                         <!-- Điểm tổng kết -->
                         <div class="card bg-body-tertiary border-0 p-3 mb-3">
@@ -488,6 +626,9 @@
                             </div>
                         </div>
 
+                        <!-- Khối dự đoán điểm CK cần đạt (Course Target Prediction) -->
+                        <div id="addQuickPredictionBox" class="mb-3"></div>
+
                         <!-- Điểm tổng kết -->
                         <div class="card bg-body-tertiary border-0 p-3 mb-2">
                             <div class="row align-items-center">
@@ -526,7 +667,33 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Dashboard JS -->
+    <!-- Simulator Engine JS -->
+    <script src="${pageContext.request.contextPath}/assets/js/simulator.js"></script>
+    <!-- Dashboard Interactions JS -->
     <script src="${pageContext.request.contextPath}/assets/js/dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Nạp dữ liệu các môn từ DOM vào Simulator engine
+            var rows = document.querySelectorAll('button[data-id]');
+            var rawCourses = [];
+            rows.forEach(function (btn) {
+                var d = btn.dataset;
+                rawCourses.push({
+                    id: parseInt(d.id),
+                    courseName: d.name,
+                    semester: d.sem,
+                    credits: parseFloat(d.credits) || 0,
+                    formula: (d.formula === 'null' || !d.formula) ? '' : d.formula,
+                    score10: (d.s10 === 'null' || !d.s10) ? null : parseFloat(d.s10),
+                    score4: (d.s4 === 'null' || !d.s4) ? null : parseFloat(d.s4),
+                    scoreLetter: (d.sletter === 'null' || !d.sletter) ? '' : d.sletter
+                });
+            });
+
+            if (window.DutSimulator && typeof window.DutSimulator.initGpaSimulator === 'function') {
+                window.DutSimulator.initGpaSimulator(rawCourses);
+            }
+        });
+    </script>
 </body>
 </html>
