@@ -5,11 +5,36 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.gradecalc.config.CustomConnectionPool;
 import com.gradecalc.model.Bean.Course;
 
 public class CourseDAO {
+    /**
+     * Tối ưu: Lấy toàn bộ danh mục môn học về nạp vào Map trong RAM chỉ với 1 truy vấn.
+     */
+    public Map<String, Course> findAllAsMap() throws SQLException, InterruptedException {
+        Map<String, Course> map = new HashMap<>();
+        Connection conn = null;
+        try {
+            conn = CustomConnectionPool.getInstance().getConnection();
+            String sql = "SELECT id, course_name, credits FROM courses";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("course_name");
+                double credits = rs.getDouble("credits");
+                map.put(name, new Course(id, name, credits));
+            }
+        } finally {
+            CustomConnectionPool.getInstance().releaseConnection(conn);
+        }
+        return map;
+    }
+
     public Course findByName(String courseName) throws SQLException, InterruptedException {
         Connection conn = null;
         try {

@@ -31,25 +31,25 @@ Hệ thống **BKGrade Calc** cung cấp giải pháp toàn diện từ bóc tá
 
 ### 1. ⚡ Bóc tách bảng điểm thông minh 1 chạm (DUT Smart Parser)
 * Không cần nhập liệu thủ công từng môn!
-* Chỉ cần vào trang `sv.dut.udn.vn` $\to$ **Kết quả học tập** $\to$ Quét chuột tô các dòng và bấm `Ctrl + C` $\to$ Dán vào hệ thống.
+* Chỉ cần vào trang `sv.dut.udn.vn` → **Kết quả học tập** → Quét chuột tô các dòng và bấm `Ctrl + C` → Dán vào hệ thống.
 * Thuật toán bóc tách tự động nhận diện: Tên môn, Số tín chỉ, Học kỳ, 7 cột điểm thành phần (`BT`, `BV`, `CK`, `DA`, `GK`, `QT`, `TH`), Công thức môn học và Trạng thái môn đang học.
 
 ### 2. 🧮 Tính điểm CPA/GPA chuẩn quy chế đào tạo tín chỉ DUT
 * Tự động nhận diện công thức điểm (ví dụ: `[GK]*0.20+[BT]*0.20+[CK]*0.60`, `[QT]*0.40+[BV]*0.60`...).
 * Tự động loại trừ các môn 0 tín chỉ (Giáo dục thể chất, Giáo dục quốc phòng) và các môn chưa có kết quả (đang học) khỏi tử số và mẫu số khi tính CPA tích lũy.
-* Quy đổi chính xác từ Thang điểm 10 $\to$ Thang điểm 4 $\to$ Điểm chữ ($A, B+, B, C+, C, D+, D, F$) theo đúng quy chế DUT.
+* Quy đổi chính xác từ Thang điểm 10 → Thang điểm 4 → Điểm chữ (A, B+, B, C+, C, D+, D, F) theo đúng quy chế DUT.
 * Bảng thống kê chi tiết theo từng học kỳ và toàn khóa (Tổng TC tích lũy, CPA hệ 4, CPA hệ 10, Xếp loại học lực).
 
 ### 3. 🎯 Dự đoán điểm thành phần môn học (Course Target Solver)
 * Trả lời câu hỏi: *"Môn này đã có GK = 8, BT = 7, vậy thi cuối kỳ (CK) cần tối thiểu mấy điểm để được A, B+, B...?"*.
 * Tự động giải phương trình trọng số tuyến tính và hiển thị bảng điểm CK cần đạt tương ứng từng mốc điểm chữ.
-* **1-Click Autofill:** Bấm trực tiếp vào mốc điểm mong muốn $\to$ Hệ thống tự điền điểm thi CK dự kiến và tự cập nhật điểm tổng kết.
+* **1-Click Autofill:** Bấm trực tiếp vào mốc điểm mong muốn → Hệ thống tự điền điểm thi CK dự kiến và tự cập nhật điểm tổng kết.
 
 ### 4. 🪄 Bộ mô phỏng mục tiêu GPA thời gian thực (GPA Goal Sandbox)
 * **Chế độ Thử nghiệm an toàn (Sandbox):** Thử nghiệm hàng chục kịch bản điểm số trong RAM trình duyệt mà không làm sai lệch bảng điểm thật trong CSDL.
-* **Live KPI:** Kéo chọn điểm chữ ($A \to F$) cho các môn đang học $\to$ Thước đo tiến độ và CPA dự phóng nhảy số tức thì (< 10ms độ trễ).
+* **Live KPI:** Kéo chọn điểm chữ (A → F) cho các môn đang học → Thước đo tiến độ và CPA dự phóng nhảy số tức thì (< 10ms độ trễ).
 * **Smart Optimizer (Gợi ý kịch bản tối ưu):**
-  * Nhập mốc CPA mục tiêu (ví dụ `3.20` - Bằng Giỏi, `3.60` - Bằng Xuất sắc) $\to$ Bấm *"Gợi ý kịch bản"*.
+  * Nhập mốc CPA mục tiêu (ví dụ `3.20` - Bằng Giỏi, `3.60` - Bằng Xuất sắc) → Bấm *"Gợi ý kịch bản"*.
   * Hệ thống tự động sinh 2 kịch bản:
     * **Kịch bản Đồng đều (An toàn):** Phấn đấu điểm đồng đều cho tất cả các môn.
     * **Kịch bản Tối ưu tín chỉ (Chiến lược):** Dồn sức lấy A/B+ cho các môn 3-4 tín chỉ, giảm tải cho các môn 1-2 tín chỉ.
@@ -137,7 +137,17 @@ Hệ thống áp dụng nghiêm ngặt quy chế đào tạo theo hệ thống t
 | **< 4.0** | **0.0** | **F** | Kém (Phải học lại) |
 
 ### 2. Quy tắc tính CPA tích lũy
-$$CPA = \frac{\sum (Tín\_chỉ_i \times Điểm\_Hệ\_4_i)}{\sum Tín\_chỉ_i}$$
+
+$$CPA = \frac{\sum (\text{Tín chỉ}_i \times \text{Điểm hệ 4}_i)}{\sum \text{Tín chỉ}_i}$$
+
+hoặc biểu diễn dạng rút gọn:
+
+```text
+        ∑ (Tín chỉ_i × Điểm hệ 4_i)
+CPA = -------------------------------
+                ∑ Tín chỉ_i
+```
+
 * **Ngoại lệ:** Môn 0 tín chỉ (GDTC, GDQP) và các môn chưa có điểm tổng kết (đang học) **không tính** vào cả tử số lẫn mẫu số.
 
 ---
@@ -198,10 +208,10 @@ Mỗi khi chỉnh sửa mã nguồn, mở Terminal tại thư mục gốc dự �
 2. Bấm vào biểu tượng cây bút sửa điểm (<i class="fa-solid fa-pen-to-square"></i>) ở cột Thao tác.
 3. Nhập các điểm thành phần đã biết (ví dụ: GK = 8.0, BT = 7.5...).
 4. Ngay bên dưới sẽ xuất hiện khung **"Dự đoán điểm thi Cuối kỳ [CK] cần đạt"**:
-   - Thấy ngay: Cần CK $\ge$ bao nhiêu điểm để được A, B+, B, C+...
+   - Thấy ngay: Cần CK ≥ bao nhiêu điểm để được A, B+, B, C+...
    - Nếu kết quả ghi *Chắc chắn đạt*: Bạn chỉ cần đi thi là đạt mốc đó.
    - Nếu kết quả ghi *Không thể đạt*: Dù CK được 10 cũng không đủ kéo lên mốc này.
-5. **Bấm trực tiếp vào ô điểm chữ mong muốn** $\to$ Hệ thống sẽ tự điền điểm số đó vào ô CK và tính toán tự động!
+5. **Bấm trực tiếp vào ô điểm chữ mong muốn** → Hệ thống sẽ tự điền điểm số đó vào ô CK và tính toán tự động!
 
 ---
 
@@ -209,12 +219,12 @@ Mỗi khi chỉnh sửa mã nguồn, mở Terminal tại thư mục gốc dự �
 1. Trên thanh điều hướng, bấm sang **Tab 2: `🎯 Dự đoán & Mô phỏng mục tiêu GPA`**.
 2. **Thử nghiệm What-if thủ công:**
    - Tại danh sách các môn đang học, chọn thử điểm chữ dự kiến ở cột **"Điểm chữ giả định"** (ví dụ chọn A cho môn 3 tín chỉ, B+ cho môn 2 tín chỉ).
-   - Quan sát ô **CPA dự phóng** ở trên cùng: Số điểm CPA sẽ lập tức nhảy theo thời gian thực kèm mức chênh lệch ($\pm$) và thanh tiến độ.
+   - Quan sát ô **CPA dự phóng** ở trên cùng: Số điểm CPA sẽ lập tức nhảy theo thời gian thực kèm mức chênh lệch (±) và thanh tiến độ.
 3. **Gợi ý kịch bản tự động:**
    - Nhập mức CPA mong muốn vào ô **"Mục tiêu CPA"** (ví dụ: `3.20`).
    - Bấm nút **"🪄 Gợi ý kịch bản tối ưu để đạt mục tiêu"**.
    - Hệ thống hiển thị 2 kịch bản: *Kịch bản Đồng đều* và *Kịch bản Tối ưu tín chỉ*.
-   - Bấm nút **"Áp dụng kịch bản"** $\to$ Các môn học tự động được điền điểm gợi ý.
+   - Bấm nút **"Áp dụng kịch bản"** → Các môn học tự động được điền điểm gợi ý.
 4. **Lưu kết quả:**
    - Khi bạn đã có được kịch bản điểm số ưng ý, bấm nút **"💾 Lưu điểm dự kiến vào CSDL"**. Điểm dự kiến này sẽ được lưu thành điểm chính thức trong CSDL.
 
