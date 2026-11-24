@@ -36,7 +36,7 @@ public class UserBO {
 
         userDAO.save(user);
 
-        //delete password from bean
+        //delete password of object user from memory/storage
         user.setPassword(null);
     }
 
@@ -48,7 +48,7 @@ public class UserBO {
 
         User user = userDAO.findByUsername(username.trim());
         if (user != null && BCrypt.checkpw(rawPassword, user.getPassword())) {
-            //delete password from bean
+            //delete password of object user from memory/storage
             user.setPassword(null);
             return user;
         }
