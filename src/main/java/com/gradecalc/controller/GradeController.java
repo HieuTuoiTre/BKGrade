@@ -192,6 +192,30 @@ public class GradeController extends HttpServlet {
                 int gradeId = Integer.parseInt(request.getParameter("gradeId"));
                 gradeDAO.deleteGrade(gradeId);
                 request.setAttribute("successMessage", "Đã xóa môn học khỏi bảng điểm!");
+
+            } else if ("apply_simulation".equals(action)) {
+                String[] gradeIds = request.getParameterValues("simGradeIds");
+                String[] simLetters = request.getParameterValues("simLetters");
+
+                if (gradeIds != null && simLetters != null && gradeIds.length == simLetters.length) {
+                    int updatedCount = 0;
+                    for (int i = 0; i < gradeIds.length; i++) {
+                        try {
+                            int gid = Integer.parseInt(gradeIds[i]);
+                            String letter = simLetters[i];
+                            if (letter != null && !letter.trim().isEmpty()) {
+                                Double s4 = GradeCalculatorBO.convertLetterToScore4(letter);
+                                Double minS10 = GradeCalculatorBO.convertLetterToMinScore10(letter);
+                                gradeDAO.updateGradeScores(gid, minS10, s4, letter);
+                                updatedCount++;
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    request.setAttribute("successMessage", "Đã lưu thành công " + updatedCount + " điểm môn học dự kiến vào bảng điểm!");
+                } else {
+                    request.setAttribute("errorMessage", "Không có môn học mô phỏng nào để lưu!");
+                }
             }
 
             // Tải lại danh sách sau khi thao tác

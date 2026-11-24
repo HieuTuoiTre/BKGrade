@@ -31,6 +31,10 @@ function openEditModal(id, name, sem, credits, formula, bt, bv, ck, da, gk, qt, 
     if (modalElement) {
         var modal = new bootstrap.Modal(modalElement);
         modal.show();
+        // Cập nhật bảng gợi ý dự đoán điểm CK cần đạt
+        if (window.DutSimulator && typeof window.DutSimulator.updateModalPredictionTable === 'function') {
+            window.DutSimulator.updateModalPredictionTable('edit');
+        }
     }
 }
 
@@ -72,6 +76,10 @@ function calculateSimulator(prefix) {
         var s10 = Math.round(total * 10) / 10;
         document.getElementById(prefix + 'Score10').value = s10;
         syncFromScore10(prefix);
+    }
+
+    if (window.DutSimulator && typeof window.DutSimulator.updateModalPredictionTable === 'function') {
+        window.DutSimulator.updateModalPredictionTable(prefix);
     }
 }
 

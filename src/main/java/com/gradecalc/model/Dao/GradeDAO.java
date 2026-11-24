@@ -161,6 +161,22 @@ public class GradeDAO {
         }
     }
 
+    public void updateGradeScores(int gradeId, Double score10, Double score4, String scoreLetter) throws SQLException, InterruptedException {
+        Connection conn = null;
+        try {
+            conn = CustomConnectionPool.getInstance().getConnection();
+            String sql = "UPDATE grades SET score_10=?, score_4=?, score_letter=? WHERE id=?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            setDoubleOrNull(ps, 1, score10);
+            setDoubleOrNull(ps, 2, score4);
+            ps.setString(3, scoreLetter);
+            ps.setInt(4, gradeId);
+            ps.executeUpdate();
+        } finally {
+            CustomConnectionPool.getInstance().releaseConnection(conn);
+        }
+    }
+
     public void addManualGrade(int userId, Grade grade) throws SQLException, InterruptedException {
         CourseDAO courseDAO = new CourseDAO();
         Course course = courseDAO.findByName(grade.getCourseName());

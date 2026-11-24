@@ -38,3 +38,21 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.hover-shadow:hover {
+    box-shadow: 0 .25rem .5rem rgba(13, 110, 253, 0.15) !important;
+    border-color: #0d6efd !important;
+    transform: translateY(-1px);
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.nav-pills .nav-link {
+    color: #495057;
+    transition: all 0.2s ease-in-out;
+}
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(13, 110, 253, 0.25);
+}
