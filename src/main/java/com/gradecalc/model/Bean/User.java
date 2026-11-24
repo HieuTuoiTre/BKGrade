@@ -5,7 +5,6 @@ public class User {
     private String username;
     private String password;
     private String fullname;
-    private String student_code;
 
     public User() {
 
@@ -16,7 +15,6 @@ public class User {
         this.username = username;
         this.password = password;
         this.fullname = fullname;
-        this.student_code = student_code;
     }
 
     public int getId() {return id;}
@@ -47,13 +45,5 @@ public class User {
 
     public void setFullname(String fullname) {
         this.fullname = fullname;
-    }
-
-    public String getStudent_code() {
-        return student_code;
-    }
-
-    public void setStudent_code(String student_code) {
-        this.student_code = student_code;
     }
 }

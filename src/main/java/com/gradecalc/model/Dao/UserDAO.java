@@ -3,22 +3,40 @@ import com.gradecalc.config.CustomConnectionPool;
 import com.gradecalc.model.Bean.Course;
 import com.gradecalc.model.Bean.User;
 
+import java.awt.*;
 import java.sql.*;
 
 public class UserDAO {
-    void save(User user) throws SQLException, InterruptedException {
+    public void save(User user) throws SQLException, InterruptedException {
         Connection connection = null;
+        boolean needsLookup = false;
         String sql = "INSERT INTO users (fullname, username, password) VALUES (?, ?, ?)" +
                      "ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), fullname=VALUES(fullname), username=VALUES(username), password=VALUES(password)";
         try{
             connection = CustomConnectionPool.getInstance().getConnection();
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+                preparedStatement.setString(1, user.getFullname());
+                preparedStatement.setString(2, user.getUsername());
+                preparedStatement.setString(3, user.getPassword());
 
+                try (ResultSet resultSet = preparedStatement.getGeneratedKeys()){
+                    if (resultSet.next()){
+                        user.setId(resultSet.getInt(1));
+                    } else {
+                        needsLookup = true;
+                    }
+                }
             }
-
         } finally {
             if (connection != null){
                 CustomConnectionPool.getInstance().releaseConnection(connection);
+            }
+
+            if (needsLookup){
+                User existing = findByUsername(user.getUsername());
+                if (existing != null){
+                    user.setId(existing.getId());
+                }
             }
         }
 
@@ -50,7 +68,21 @@ public class UserDAO {
         }
     }
 
-    boolean checkUsernameExists(String username){
-        return true;
+    public boolean checkUsernameExists(String username) throws SQLException, InterruptedException {
+        Connection connection = null;
+        String sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
+        try {
+            connection = CustomConnectionPool.getInstance().getConnection();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, username);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    return resultSet.next();
+                }
+            }
+        } finally {
+            if (connection != null) {
+                CustomConnectionPool.getInstance().releaseConnection(connection);
+            }
+        }
     }
 }

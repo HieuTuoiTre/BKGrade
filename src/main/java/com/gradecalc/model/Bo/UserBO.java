@@ -1,12 +1,13 @@
 package com.gradecalc.model.Bo;
 import com.gradecalc.model.Bean.User;
+import com.gradecalc.model.Dao.UserDAO;
 
 public class UserBO {
-    boolean register(User user, String rawPassword){
-        return true;
+    void register(User user, String rawPassword){
+
     }
 
-    boolean login(String username, String rawPassword){
-        return true;
+    void login(String username, String rawPassword){
+
     }
 }
