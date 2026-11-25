@@ -19,6 +19,11 @@ public class UserBO {
             throw new IllegalArgumentException("Username không được phép để trống.");
         }
 
+        //null fullname
+        if (user.getFullname() == null || user.getFullname().trim().isEmpty()){
+            throw new IllegalArgumentException("Fullname không được phép để trống.");
+        }
+
         //null password, too short
         if (rawPassword == null || rawPassword.length() < 6){
             throw new IllegalArgumentException("Mật khẩu không hợp lệ (để trống/ ít hơn 6 ký tự).");
