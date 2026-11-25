@@ -23,3 +23,7 @@ Desktop.ini
 # File tạm và log
 *.log
 *.tmp
+
+# Cấu hình nhạy cảm (mật khẩu DB)
+db.properties
+src/main/resources/db.properties

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS grades (
     user_id INT NOT NULL,
     course_id INT NOT NULL,
     semester VARCHAR(20) NOT NULL,
+    credits DOUBLE NOT NULL DEFAULT 0,
     formula VARCHAR(100),
     score_bt DOUBLE NULL,
     score_bv DOUBLE NULL,
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS grades (
     score_10 DOUBLE NULL,
     score_4 DOUBLE NULL,
     score_letter VARCHAR(5) NULL,
+    is_predicted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_grade_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_grade_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     UNIQUE KEY uk_user_course_sem (user_id, course_id, semester)

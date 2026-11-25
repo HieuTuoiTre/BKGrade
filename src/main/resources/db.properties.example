@@ -1,0 +1,4 @@
+# Sao chép file này thành db.properties (hoặc cấu hình biến môi trường DB_URL, DB_USER, DB_PASSWORD)
+db.url=jdbc:mysql://<HOST>:4000/BKGRADE?useSSL=true&characterEncoding=UTF-8&autoReconnect=true&rewriteBatchedStatements=true
+db.user=<DB_USER>
+db.password=<DB_PASSWORD>

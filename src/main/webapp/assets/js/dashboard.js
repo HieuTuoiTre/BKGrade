@@ -99,14 +99,19 @@ function syncFromScore10(prefix) {
     var s4 = 0.0;
     var letter = 'F';
 
-    if (val >= 8.5) { s4 = 4.0; letter = 'A'; }
-    else if (val >= 8.0) { s4 = 3.5; letter = 'B+'; }
-    else if (val >= 7.0) { s4 = 3.0; letter = 'B'; }
-    else if (val >= 6.5) { s4 = 2.5; letter = 'C+'; }
-    else if (val >= 5.5) { s4 = 2.0; letter = 'C'; }
-    else if (val >= 5.0) { s4 = 1.5; letter = 'D+'; }
-    else if (val >= 4.0) { s4 = 1.0; letter = 'D'; }
-    else { s4 = 0.0; letter = 'F'; }
+    if (window.DutSimulator && typeof window.DutSimulator.score10ToScore4 === 'function') {
+        s4 = window.DutSimulator.score10ToScore4(val);
+        letter = window.DutSimulator.score10ToLetter(val);
+    } else {
+        if (val >= 8.5) { s4 = 4.0; letter = 'A'; }
+        else if (val >= 8.0) { s4 = 3.5; letter = 'B+'; }
+        else if (val >= 7.0) { s4 = 3.0; letter = 'B'; }
+        else if (val >= 6.5) { s4 = 2.5; letter = 'C+'; }
+        else if (val >= 5.5) { s4 = 2.0; letter = 'C'; }
+        else if (val >= 5.0) { s4 = 1.5; letter = 'D+'; }
+        else if (val >= 4.0) { s4 = 1.0; letter = 'D'; }
+        else { s4 = 0.0; letter = 'F'; }
+    }
 
     if (s4Input) s4Input.value = s4.toFixed(1);
     if (sLetterInput) sLetterInput.value = letter;
@@ -124,4 +129,121 @@ function parseNum(val) {
     if (val === undefined || val === null || val.trim() === '') return null;
     var n = parseFloat(val);
     return isNaN(n) ? null : n;
+}
+
+/* ==========================================================================
+   CHẾ ĐỘ CHỌN & XÓA HÀNG LOẠT MÔN HỌC (BULK DELETE)
+   ========================================================================== */
+
+var bulkSelectActive = false;
+
+function toggleBulkSelectMode(enable) {
+    bulkSelectActive = !!enable;
+
+    var cols = document.querySelectorAll('.bulk-select-col');
+    cols.forEach(function (col) {
+        col.classList.toggle('d-none', !bulkSelectActive);
+    });
+
+    var startBtn = document.getElementById('btnStartBulkSelect');
+    var actionGroup = document.getElementById('bulkActionGroup');
+    if (startBtn) {
+        startBtn.classList.toggle('d-none', bulkSelectActive);
+    }
+    if (actionGroup) {
+        actionGroup.classList.toggle('d-none', !bulkSelectActive);
+        actionGroup.classList.toggle('d-flex', bulkSelectActive);
+    }
+
+    if (!bulkSelectActive) {
+        var masterCb = document.getElementById('selectAllGrades');
+        if (masterCb) {
+            masterCb.checked = false;
+            masterCb.indeterminate = false;
+        }
+        document.querySelectorAll('.grade-select-checkbox').forEach(function (cb) {
+            cb.checked = false;
+        });
+    }
+
+    updateBulkSelectionUI();
+}
+
+function toggleSelectAllGrades(masterCheckbox) {
+    var checked = !!(masterCheckbox && masterCheckbox.checked);
+    document.querySelectorAll('.grade-select-checkbox').forEach(function (cb) {
+        cb.checked = checked;
+    });
+    updateBulkSelectionUI();
+}
+
+function handleGradeRowClick(event, row) {
+    if (!bulkSelectActive || !row) return;
+    if (event.target && event.target.closest('button, a, form, input, label')) {
+        return;
+    }
+    var cb = row.querySelector('.grade-select-checkbox');
+    if (cb) {
+        cb.checked = !cb.checked;
+        updateBulkSelectionUI();
+    }
+}
+
+function updateBulkSelectionUI() {
+    var checkboxes = document.querySelectorAll('.grade-select-checkbox');
+    var selectedCount = 0;
+    var totalCount = checkboxes.length;
+
+    checkboxes.forEach(function (cb) {
+        if (cb.checked) {
+            selectedCount++;
+        }
+        var row = cb.closest('.grade-row');
+        if (row) {
+            row.classList.toggle('table-danger', bulkSelectActive && cb.checked);
+        }
+    });
+
+    var countSpan = document.getElementById('bulkSelectedCount');
+    if (countSpan) {
+        countSpan.textContent = selectedCount;
+    }
+
+    var deleteBtn = document.getElementById('btnOpenBulkDeleteModal');
+    if (deleteBtn) {
+        deleteBtn.disabled = (selectedCount === 0);
+    }
+
+    var masterCb = document.getElementById('selectAllGrades');
+    if (masterCb) {
+        masterCb.checked = (totalCount > 0 && selectedCount === totalCount);
+        masterCb.indeterminate = (selectedCount > 0 && selectedCount < totalCount);
+    }
+}
+
+function openBulkDeleteModal() {
+    var checkedBoxes = document.querySelectorAll('.grade-select-checkbox:checked');
+    if (checkedBoxes.length === 0) return;
+
+    var countEl = document.getElementById('bulkConfirmCount');
+    if (countEl) {
+        countEl.textContent = checkedBoxes.length;
+    }
+
+    var hiddenContainer = document.getElementById('bulkDeleteHiddenInputs');
+    if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+        checkedBoxes.forEach(function (cb) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'gradeIds';
+            input.value = cb.value;
+            hiddenContainer.appendChild(input);
+        });
+    }
+
+    var modalEl = document.getElementById('bulkDeleteConfirmModal');
+    if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 }

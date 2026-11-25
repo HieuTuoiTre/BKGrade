@@ -82,7 +82,6 @@ public class GradeCalculatorBO {
      */
     public static String convertScore10ToLetter(Double score10) {
         if (score10 == null) return null;
-        if (score10 >= 9.5) return "A"; // Hoặc A+
         if (score10 >= 8.5) return "A";
         if (score10 >= 8.0) return "B+";
         if (score10 >= 7.0) return "B";
@@ -131,7 +130,8 @@ public class GradeCalculatorBO {
 
     /**
      * Tính tổng kết toàn khóa (CPA).
-     * Bỏ qua các môn 0 tín chỉ (GDTC/GDQP) và các môn chưa có điểm hệ 4 (đang học).
+     * Bỏ qua các môn 0 tín chỉ (GDTC/GDQP), môn chưa có điểm hệ 4 (đang học),
+     * và các môn chỉ đang đánh dấu điểm dự kiến (is_predicted = true).
      */
     public SemesterSummary calculate(List<Grade> gradeList) {
         double totalCredits = 0.0;
@@ -139,7 +139,7 @@ public class GradeCalculatorBO {
         double weightedSum4 = 0.0;
 
         for (Grade grade : gradeList) {
-            if (grade.getCredits() == 0 || grade.getScore4() == null) {
+            if (grade.getCredits() == 0 || grade.getScore4() == null || grade.isPredicted()) {
                 continue;
             }
 

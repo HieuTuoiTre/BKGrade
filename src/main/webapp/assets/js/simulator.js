@@ -103,7 +103,7 @@
         targets.forEach(letter => {
             const minScore10 = letterToMinScore10(letter);
             const neededScore = (minScore10 - knownWeightedSum) / targetWeight;
-            const rounded = Math.round(neededScore * 10) / 10;
+            const rounded = Math.ceil(neededScore * 10 - 1e-9) / 10;
 
             let status = 'possible';
             let badgeClass = 'bg-primary';
@@ -259,13 +259,14 @@
 
             const s4 = (c.score4 !== null && c.score4 !== undefined && c.score4 !== '') ? parseFloat(c.score4) : null;
             const letter = c.scoreLetter ? c.scoreLetter.trim() : '';
+            const isPredicted = c.isPredicted === true;
 
-            // Môn đã có điểm tổng kết
-            if (s4 !== null && !isNaN(s4) && letter !== '' && letter !== 'Đang học') {
+            // Chỉ cộng vào CPA chính thức nếu môn đã có điểm thật (không phải điểm dự kiến)
+            if (!isPredicted && s4 !== null && !isNaN(s4) && letter !== '' && letter !== 'Đang học') {
                 compCredits += credits;
                 compPoints += credits * s4;
             } else {
-                // Môn đang học hoặc chưa có điểm
+                // Môn đang học hoặc đang lưu trạng thái dự kiến
                 inProgress.push({
                     id: c.id,
                     name: c.courseName,
@@ -273,7 +274,8 @@
                     credits: credits,
                     currentLetter: letter || '',
                     currentScore4: s4,
-                    simLetter: (letter && letter !== 'Đang học') ? letter : 'B', // Mặc định giả định điểm B
+                    isPredicted: isPredicted,
+                    simLetter: (letter && letter !== 'Đang học') ? letter : 'B',
                     simScore4: (s4 !== null && !isNaN(s4)) ? s4 : 3.0
                 });
             }
@@ -656,6 +658,15 @@
         actionInput.value = 'apply_simulation';
         form.appendChild(actionInput);
 
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (csrfMeta && csrfMeta.content) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfToken';
+            csrfInput.value = csrfMeta.content;
+            form.appendChild(csrfInput);
+        }
+
         simState.simulatedCourses.forEach(c => {
             const idInput = document.createElement('input');
             idInput.type = 'hidden';
@@ -683,7 +694,12 @@
 
     function escapeHtml(text) {
         if (!text) return '';
-        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
     function getLetterBadgeClass(letter) {
@@ -705,7 +721,9 @@
         updateModalPredictionTable: updateModalPredictionTable,
         initGpaSimulator: initGpaSimulator,
         recalculateGpaSim: recalculateGpaSim,
-        solveRequiredComponentScore: solveRequiredComponentScore
+        solveRequiredComponentScore: solveRequiredComponentScore,
+        score10ToScore4: score10ToScore4,
+        score10ToLetter: score10ToLetter
     };
 
 })();

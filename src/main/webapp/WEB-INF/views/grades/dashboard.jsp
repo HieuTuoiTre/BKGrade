@@ -1,11 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="${fn:escapeXml(sessionScope.csrfToken)}">
     <title>Bảng Điểm Học Tập - BKGrade Calc</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -39,14 +41,14 @@
         <!-- 2. THÔNG BÁO (LỖI / THÀNH CÔNG) -->
         <c:if test="${not empty errorMessage}">
             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>${errorMessage}
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>${fn:escapeXml(errorMessage)}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
 
         <c:if test="${not empty successMessage}">
             <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                <i class="fa-solid fa-circle-check me-2"></i>${fn:escapeXml(successMessage)}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
@@ -98,7 +100,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-semibold text-uppercase">Xếp loại học lực</div>
-                            <h3 class="fw-bold mb-0 text-success">${not empty totalSummary ? totalSummary.academicRank : 'Chưa có'}</h3>
+                            <h3 class="fw-bold mb-0 text-success">${not empty totalSummary ? fn:escapeXml(totalSummary.academicRank) : 'Chưa có'}</h3>
                         </div>
                     </div>
                 </div>
@@ -133,6 +135,7 @@
             <div class="card-body">
                 <form action="grades" method="post">
                     <input type="hidden" name="action" value="import">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
                     <div class="mb-3">
                         <label for="rawDutText" class="form-label text-muted">
                             Vào <code>sv.dut.udn.vn</code> ➔ <strong>Kết quả học tập</strong> ➔ Quét chuột tô các dòng (hỗ trợ cả các môn đang học và 7 cột điểm thành phần) ➔ <code>Ctrl + C</code> và dán vào đây:
@@ -161,7 +164,20 @@
                     </h5>
                     <span class="badge bg-secondary">${not empty gradeList ? gradeList.size() : 0} môn</span>
                 </div>
-                <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <c:if test="${not empty gradeList}">
+                        <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnStartBulkSelect" onclick="toggleBulkSelectMode(true)">
+                            <i class="fa-solid fa-list-check me-1"></i>Chọn nhiều để xóa
+                        </button>
+                        <div id="bulkActionGroup" class="d-none align-items-center gap-2">
+                            <button type="button" class="btn btn-danger btn-sm fw-semibold" id="btnOpenBulkDeleteModal" onclick="openBulkDeleteModal()" disabled>
+                                <i class="fa-solid fa-trash-can me-1"></i>Xóa đã chọn (<span id="bulkSelectedCount">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="btnCancelBulkSelect" onclick="toggleBulkSelectMode(false)">
+                                <i class="fa-solid fa-xmark me-1"></i>Hủy
+                            </button>
+                        </div>
+                    </c:if>
                     <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addCourseModal">
                         <i class="fa-solid fa-plus me-1"></i>Thêm môn học thủ công
                     </button>
@@ -172,6 +188,9 @@
                     <table class="table table-hover table-striped align-middle mb-0 table-grades">
                         <thead class="table-light text-uppercase small text-muted text-center">
                             <tr>
+                                <th class="bulk-select-col d-none text-center" style="width: 38px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAllGrades" title="Chọn tất cả" onchange="toggleSelectAllGrades(this)">
+                                </th>
                                 <th style="width: 40px;">STT</th>
                                 <th>Học kỳ</th>
                                 <th class="text-start">Tên môn học</th>
@@ -194,10 +213,13 @@
                             <c:choose>
                                 <c:when test="${not empty gradeList}">
                                     <c:forEach var="g" items="${gradeList}" varStatus="loop">
-                                        <tr>
+                                        <tr class="grade-row" onclick="handleGradeRowClick(event, this)">
+                                            <td class="bulk-select-col d-none text-center">
+                                                <input type="checkbox" class="form-check-input grade-select-checkbox" value="${g.id}" onchange="updateBulkSelectionUI()">
+                                            </td>
                                             <td class="text-center fw-semibold text-muted">${loop.index + 1}</td>
-                                            <td class="text-center"><span class="badge bg-light text-dark border">${g.semester}</span></td>
-                                            <td class="fw-semibold text-start">${g.courseName}</td>
+                                            <td class="text-center"><span class="badge bg-light text-dark border">${fn:escapeXml(g.semester)}</span></td>
+                                            <td class="fw-semibold text-start">${fn:escapeXml(g.courseName)}</td>
                                             <td class="text-center">
                                                 <span class="${g.credits == 0 ? 'text-muted fst-italic' : 'fw-bold text-primary'}">
                                                     <fmt:formatNumber value="${g.credits}" pattern="#.#"/>
@@ -208,7 +230,7 @@
                                             <td class="text-center">
                                                 <c:choose>
                                                     <c:when test="${not empty g.formula}">
-                                                        <span class="formula-pill font-monospace" title="${g.formula}">${g.formula}</span>
+                                                        <span class="formula-pill font-monospace" title="${fn:escapeXml(g.formula)}">${fn:escapeXml(g.formula)}</span>
                                                     </c:when>
                                                     <c:otherwise><span class="text-null">-</span></c:otherwise>
                                                 </c:choose>
@@ -232,6 +254,11 @@
                                             </td>
                                             <td class="text-center">
                                                 <c:choose>
+                                                    <c:when test="${g.predicted}">
+                                                        <span class="badge bg-info text-dark badge-grade" title="Điểm dự kiến (không tính vào CPA chính thức)">
+                                                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Dự kiến: ${fn:escapeXml(g.scoreLetter)}
+                                                        </span>
+                                                    </c:when>
                                                     <c:when test="${g.scoreLetter == 'Đạt'}">
                                                         <span class="badge bg-success badge-grade">
                                                             <i class="fa-solid fa-circle-check me-1"></i>Đạt
@@ -243,19 +270,19 @@
                                                         </span>
                                                     </c:when>
                                                     <c:when test="${g.scoreLetter == 'A' || g.scoreLetter == 'A+'}">
-                                                        <span class="badge bg-success badge-grade">${g.scoreLetter}</span>
+                                                        <span class="badge bg-success badge-grade">${fn:escapeXml(g.scoreLetter)}</span>
                                                     </c:when>
                                                     <c:when test="${g.scoreLetter == 'B' || g.scoreLetter == 'B+'}">
-                                                        <span class="badge bg-primary badge-grade">${g.scoreLetter}</span>
+                                                        <span class="badge bg-primary badge-grade">${fn:escapeXml(g.scoreLetter)}</span>
                                                     </c:when>
                                                     <c:when test="${g.scoreLetter == 'C' || g.scoreLetter == 'C+'}">
-                                                        <span class="badge bg-warning text-dark badge-grade">${g.scoreLetter}</span>
+                                                        <span class="badge bg-warning text-dark badge-grade">${fn:escapeXml(g.scoreLetter)}</span>
                                                     </c:when>
                                                     <c:when test="${g.scoreLetter == 'D' || g.scoreLetter == 'D+'}">
-                                                        <span class="badge bg-secondary badge-grade">${g.scoreLetter}</span>
+                                                        <span class="badge bg-secondary badge-grade">${fn:escapeXml(g.scoreLetter)}</span>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <span class="badge bg-danger badge-grade">${g.scoreLetter}</span>
+                                                        <span class="badge bg-danger badge-grade">${fn:escapeXml(g.scoreLetter)}</span>
                                                     </c:otherwise>
                                                 </c:choose>
                                             </td>
@@ -264,10 +291,10 @@
                                                 <button type="button" class="btn btn-sm btn-outline-secondary me-1" 
                                                         title="Sửa điểm / Dự báo GPA"
                                                         data-id="${g.id}"
-                                                        data-name="${g.courseName}"
-                                                        data-sem="${g.semester}"
+                                                        data-name="${fn:escapeXml(g.courseName)}"
+                                                        data-sem="${fn:escapeXml(g.semester)}"
                                                         data-credits="${g.credits}"
-                                                        data-formula="${g.formula}"
+                                                        data-formula="${fn:escapeXml(g.formula)}"
                                                         data-bt="${g.scoreBt}"
                                                         data-bv="${g.scoreBv}"
                                                         data-ck="${g.scoreCk}"
@@ -277,12 +304,14 @@
                                                         data-th="${g.scoreTh}"
                                                         data-s10="${g.score10}"
                                                         data-s4="${g.score4}"
-                                                        data-sletter="${g.scoreLetter}"
+                                                        data-sletter="${fn:escapeXml(g.scoreLetter)}"
+                                                        data-predicted="${g.predicted}"
                                                         onclick="openEditModalFromBtn(this)">
                                                     <i class="fa-solid fa-pen-to-square"></i>
                                                 </button>
                                                 <form action="grades" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa môn này khỏi bảng điểm?');">
                                                     <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
                                                     <input type="hidden" name="gradeId" value="${g.id}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa môn">
                                                         <i class="fa-solid fa-trash-can"></i>
@@ -388,10 +417,17 @@
                             </h5>
                             <span class="badge bg-primary" id="simCourseCountBadge">0 môn</span>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="window.resetSimulation()">
                                 <i class="fa-solid fa-rotate-left me-1"></i>Đặt lại
                             </button>
+                            <form action="grades" method="post" class="d-inline" onsubmit="return confirm('Xóa tất cả điểm dự kiến đã lưu và trả các môn đó về trạng thái Đang học?');">
+                                <input type="hidden" name="action" value="clear_predictions">
+                                <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm fw-semibold">
+                                    <i class="fa-solid fa-eraser me-1"></i>Xóa điểm dự kiến
+                                </button>
+                            </form>
                             <button type="button" class="btn btn-success btn-sm fw-semibold shadow-sm" onclick="window.saveSimulationToDb()">
                                 <i class="fa-solid fa-floppy-disk me-1"></i>Lưu điểm dự kiến vào CSDL
                             </button>
@@ -438,6 +474,7 @@
                 </div>
                 <form action="grades" method="post">
                     <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
                     <input type="hidden" id="editGradeId" name="gradeId">
                     <div class="modal-body">
                         <!-- Thông tin môn -->
@@ -553,6 +590,7 @@
                 </div>
                 <form action="grades" method="post">
                     <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
                     <div class="modal-body">
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
@@ -658,6 +696,39 @@
         </div>
     </div>
 
+    <!-- MODAL XÁC NHẬN XÓA HÀNG LOẠT -->
+    <div class="modal fade" id="bulkDeleteConfirmModal" tabindex="-1" aria-labelledby="bulkDeleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="bulkDeleteConfirmModalLabel">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa nhiều môn học
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="grades" method="post">
+                    <input type="hidden" name="action" value="delete_batch">
+                    <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}">
+                    <div id="bulkDeleteHiddenInputs"></div>
+                    <div class="modal-body">
+                        <p class="mb-2 fs-6">
+                            Bạn có chắc chắn muốn xóa <strong id="bulkConfirmCount" class="text-danger">0</strong> môn học đã chọn khỏi bảng điểm không?
+                        </p>
+                        <p class="text-muted small mb-0">
+                            <i class="fa-solid fa-circle-info me-1"></i>Thao tác này sẽ xóa vĩnh viễn các môn đã chọn và không thể hoàn tác.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                            <i class="fa-solid fa-trash-can me-1"></i>Xác nhận xóa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- 6. CHÂN TRANG (FOOTER) -->
     <footer class="py-3 bg-dark text-white text-center mt-auto">
         <div class="container-fluid px-lg-4">
@@ -686,7 +757,8 @@
                     formula: (d.formula === 'null' || !d.formula) ? '' : d.formula,
                     score10: (d.s10 === 'null' || !d.s10) ? null : parseFloat(d.s10),
                     score4: (d.s4 === 'null' || !d.s4) ? null : parseFloat(d.s4),
-                    scoreLetter: (d.sletter === 'null' || !d.sletter) ? '' : d.sletter
+                    scoreLetter: (d.sletter === 'null' || !d.sletter) ? '' : d.sletter,
+                    isPredicted: d.predicted === 'true'
                 });
             });
 

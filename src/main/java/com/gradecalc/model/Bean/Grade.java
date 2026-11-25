@@ -21,9 +21,10 @@ public class Grade {
     private Double score4;
     private String scoreLetter;
 
-    // Trường phụ lấy từ bảng courses
+    // Trường phụ lấy từ bảng courses / grades
     private String courseName;
     private double credits;
+    private boolean predicted;
 
     public Grade() {
     }
@@ -185,5 +186,13 @@ public class Grade {
 
     public void setCredits(double credits) {
         this.credits = credits;
+    }
+
+    public boolean isPredicted() {
+        return predicted;
+    }
+
+    public void setPredicted(boolean predicted) {
+        this.predicted = predicted;
     }
 }
