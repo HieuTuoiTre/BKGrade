@@ -1,25 +1,25 @@
 package com.gradecalc.model.Bean;
 
 public class User {
-    private String id;
+    private int id;
     private String username;
     private String password;
     private String fullname;
-    private String student_code;
 
-    public User(String id, String username, String password, String fullname, String student_code) {
+    public User() {
+
+    }
+
+    public User(int id, String username, String password, String fullname) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.fullname = fullname;
-        this.student_code = student_code;
     }
 
-    public String getId() {
-        return id;
-    }
+    public int getId() {return id;}
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -45,13 +45,5 @@ public class User {
 
     public void setFullname(String fullname) {
         this.fullname = fullname;
-    }
-
-    public String getStudent_code() {
-        return student_code;
-    }
-
-    public void setStudent_code(String student_code) {
-        this.student_code = student_code;
     }
 }
