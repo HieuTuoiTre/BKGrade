@@ -86,7 +86,7 @@ Tạo bảng `users` trong MySQL (thêm vào file `database/schema.sql`):
 * Khai báo Servlet ánh xạ tới các URL: `@WebServlet(urlPatterns = {"/login", "/register", "/logout", "/profile"})`.
 * **Phương thức `doGet()`:**
   * Nếu vào `/login`: `request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);`.
-  * Nếu vào `/register`: forward sang `register.jsp`.
+  * Nếu vào `/register`: forward sang `register.html`.
   * Nếu vào `/logout`: Hủy session (`session.invalidate()`) và redirect về trang `/login`.
 * **Phương thức `doPost()`:**
   * Nhận `username`, `password` từ form.
@@ -94,7 +94,7 @@ Tạo bảng `users` trong MySQL (thêm vào file `database/schema.sql`):
     * Nếu thành công: Tạo phiên `HttpSession session = request.getSession();` và lưu `session.setAttribute("currentUser", user);`, sau đó redirect tới `/grades`.
     * Nếu thất bại: `request.setAttribute("errorMessage", "Sai tên đăng nhập hoặc mật khẩu!");` và forward lại trang đăng nhập.
 
-#### Bước 6: Tầng View JSP (`login.jsp`, `register.jsp`, `profile.jsp`)
+#### Bước 6: Tầng View JSP (`login.jsp`, `register.html`, `profile.jsp`)
 * Sử dụng thư viện JSTL: `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>`.
 * Dùng Bootstrap 5 để thiết kế giao diện form căn giữa màn hình, hiện đại và thân thiện trên điện thoại.
 * **Tái sử dụng Layout dùng chung do Hiếu xây dựng (`views/layout/`):**

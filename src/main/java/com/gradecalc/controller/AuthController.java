@@ -26,8 +26,8 @@ public class AuthController extends HttpServlet {
             case "/login":
                 request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
                 break;
-            case "/resigter":
-                request.getRequestDispatcher("/WEB-INF/views/auth/register.jsp").forward(request, response);
+            case "/register":
+                request.getRequestDispatcher("/WEB-INF/views/auth/register.html").forward(request, response);
                 break;
             case "/profile":
                 request.getRequestDispatcher("/WEB-INF/views/auth/profile.jsp").forward(request, response);
@@ -89,7 +89,7 @@ public class AuthController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login?registered=true");
         } catch (IllegalArgumentException e) {
             request.setAttribute("errorMessage", e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/auth/register.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/auth/register.html").forward(request, response);
         } catch (SQLException | InterruptedException e){
             throw new ServletException("Lỗi kết nối cơ sở dữ liệu khi đăng ký tài khoản: ", e);
         }

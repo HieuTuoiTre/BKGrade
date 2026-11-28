@@ -1,16 +1,28 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: LAPTOP
-  Date: 11/23/2026
-  Time: 3:05 PM
-  To change this template use File | Settings | File Templates.
---%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
+<!-- <%@ page contentType="text/html;charset=UTF-8" language="java" %> -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Register</title>
 </head>
 <body>
+    <h1>Sign in</h1>
+
+    <div class="container">
+        <div class="form-field">
+            <label for="username">Username</label>
+            <input type="text" id="username">
+        </div>
+
+        <div class="form-field">
+            <label for="password">Password</label>
+            <input type="password" id="password">
+        </div>
+
+        <a href="">Don't have an account? Register instead.</a>
+    </div>
 
 </body>
 </html>
